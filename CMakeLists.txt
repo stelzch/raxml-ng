@@ -31,7 +31,7 @@ include(FetchContent)
 FetchContent_Declare(
     binarytreesummation
     GIT_REPOSITORY https://github.com/stelzch/binary_tree_summation.git
-    GIT_TAG 7ddc506aad609267804448b674e7c1a5333f1190
+    GIT_TAG e895e32331bfe9f06f79e76c4c8d2ca2893cd00f
 )
 FetchContent_MakeAvailable(binarytreesummation)
 endif()
@@ -50,10 +50,10 @@ endif()
 #set(CMAKE_CXX_EXTENSIONS OFF)
 
 # set these flags globally for all subprojects (libpll etc.)
-set (CMAKE_CXX_FLAGS_DEBUG    "-O0 -g" CACHE INTERNAL "")
-set (CMAKE_CXX_FLAGS_RELEASE  "-O1 -g"    CACHE INTERNAL "")
-set (CMAKE_C_FLAGS_DEBUG    "-O0 -g" CACHE INTERNAL "")
-set (CMAKE_C_FLAGS_RELEASE  "-O1 -g"    CACHE INTERNAL "")
+set (CMAKE_CXX_FLAGS_DEBUG    "-O3 -g" CACHE INTERNAL "")
+set (CMAKE_CXX_FLAGS_RELEASE  "-O3 -g"    CACHE INTERNAL "")
+set (CMAKE_C_FLAGS_DEBUG    "-O3 -g" CACHE INTERNAL "")
+set (CMAKE_C_FLAGS_RELEASE  "-O3 -g"    CACHE INTERNAL "")
 
 project (raxml-ng C CXX)
 

@@ -476,36 +476,6 @@ double ParallelContext::reproducible_parallel_reduce(double* data, size_t size, 
 #ifdef _RAXML_MPI
     assert(op == PLLMOD_COMMON_REDUCE_SUM);
     return binary_tree_sum(data, size);
-
-    // Determine total number of elements
-    //uint64_t s = size;
-    //uint64_t total;
-    //MPI_Reduce(&s, &total, 1, MPI_UINT64_T, MPI_SUM, 0, _comm);
-
-    //std::vector<double> buffer;
-
-    //if (master_rank()) {
-    //    cout << "Reproducibly summing total of " << s << " elements" << endl;
-    //    buffer.resize(total);
-    //}
-
-
-    //MPI_Gather(data, size, MPI_DOUBLE,
-    //       master_rank() ? &buffer[0] : NULL, total, MPI_DOUBLE,
-    //       0, _comm);
-
-    //double sum;
-    //if (master_rank()) {
-    //    sum = std::accumulate(buffer.begin(), buffer.end(), 0.0);
-    //}
-
-    //MPI_Bcast(&sum, 1, MPI_DOUBLE, 0, _comm);
-
-    //if (master_rank()) {
-    //    cout << "Result = " << sum << endl;
-    //}
-
-
 #else
     // TODO: warn user about unimplemented behavior
     assert(0);
