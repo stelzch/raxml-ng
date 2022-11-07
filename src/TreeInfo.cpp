@@ -1,5 +1,7 @@
 #include <algorithm>
 
+#include <iostream>
+
 #include "TreeInfo.hpp"
 #include "ParallelContext.hpp"
 
@@ -104,6 +106,23 @@ void TreeInfo::init(const Options &opts, const Tree& tree, const PartitionedMSA&
   // finalize partition contribution computation
   for (auto& c: _partition_contributions)
     c /= total_weight;
+
+
+#ifdef REPRODUCIBLE
+  cout << "Reproducibility is enabled, reserved " << part_assign.length() << endl;
+  _persite_lnl.resize(part_assign.length());
+  _part_site_lh.reserve(part_assign.num_parts());
+  _total_patterns = parted_msa.total_patterns();
+
+  // build up list
+  size_t index = 0;
+  for (auto it = part_assign.begin(); it != part_assign.end(); ++it) {
+      _part_site_lh.push_back(&_persite_lnl[index]);
+      index += it->length;
+  }
+
+
+#endif
 }
 
 TreeInfo::~TreeInfo ()
@@ -185,7 +204,13 @@ void TreeInfo::tree(const Tree& tree)
 
 double TreeInfo::loglh(bool incremental)
 {
+#ifdef REPRODUCIBLE
+  persite_loglh(_part_site_lh, incremental);
+  double result = ParallelContext::reproducible_parallel_reduce(&_persite_lnl[0], _total_patterns, PLLMOD_COMMON_REDUCE_SUM);
+  return result;
+#else
   return pllmod_treeinfo_compute_loglh(_pll_treeinfo, incremental ? 1 : 0);
+#endif
 }
 
 double TreeInfo::persite_loglh(std::vector<double*> part_site_lh, bool incremental)

@@ -64,9 +64,16 @@ endif()
 # export to the parent dir to use in GTest makefile
 set(RAXML_LIBS ${RAXML_LIBS} PARENT_SCOPE)
 
-#message(STATUS "Libs: ${RAXML_LIBS}")
 
+if (USE_REPRODUCIBLE) 
+message(STATUS Reproducibility enabled)
+set(RAXML_LIBS ${RAXML_LIBS} binarytreesummation)
+add_definitions(-DREPRODUCIBLE)
+endif()
+
+message(STATUS "Libs: ${RAXML_LIBS}")
 target_link_libraries(raxml_module ${RAXML_LIBS})
+
 
 if (BUILD_AS_LIBRARY AND NOT APPLE)
   target_link_libraries(raxml_module gcc_s gcc)

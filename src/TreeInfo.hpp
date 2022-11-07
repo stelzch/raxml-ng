@@ -72,6 +72,9 @@ private:
   bool _check_lh_impr;
   bool _use_old_constraint;
   doubleVector _partition_contributions;
+  doubleVector _persite_lnl;
+  size_t _total_patterns;
+  std::vector<double *> _part_site_lh;
 
   void init(const Options &opts, const Tree& tree, const PartitionedMSA& parted_msa,
             const IDVector& tip_msa_idmap, const PartitionAssignment& part_assign,

@@ -1,10 +1,30 @@
 #include "ParallelContext.hpp"
+#include <binarytreesummation.h>
 
 #include "Options.hpp"
 
 #include "util/EnergyMonitor.hpp"
 
+#include<fstream>
+#include<unistd.h>
+#include<iostream>
+#include<cstdlib>
+
 using namespace std;
+
+void __attribute__((optimize("O0"))) attach_debugger(bool condition) {
+    if (!condition) return;
+    bool attached = false;
+
+    // also write PID to a file
+    ofstream os("/tmp/mpi_debug.pid");
+    os << getpid() << endl;
+    os.close();
+
+    cout << "Waiting for debugger to be attached, PID: "
+        << getpid() << endl;
+    while (!attached) sleep(1);
+}
 
 // This is just a default size; the buffer will be resized later according to #part and #threads
 #define PARALLEL_BUF_SIZE (128 * 1024)
@@ -70,6 +90,8 @@ void ParallelContext::init_mpi(int argc, char * argv[], void * comm)
 
     detect_num_nodes();
 //    printf("nodes: %lu\n", _num_nodes);
+    const char *debug_rank = std::getenv("DEBUG_MPI_RANK");
+    attach_debugger(debug_rank != NULL && _rank_id == atoi(debug_rank));
   }
 #else
   RAXML_UNUSED(argc);
@@ -447,6 +469,50 @@ void ParallelContext::parallel_reduce(double * data, size_t size, int op)
   RAXML_UNUSED(size);
   RAXML_UNUSED(op);
 #endif
+}
+
+double ParallelContext::reproducible_parallel_reduce(double* data, size_t size, int op)
+{
+#ifdef _RAXML_MPI
+    assert(op == PLLMOD_COMMON_REDUCE_SUM);
+    return binary_tree_sum(data, size);
+
+    // Determine total number of elements
+    //uint64_t s = size;
+    //uint64_t total;
+    //MPI_Reduce(&s, &total, 1, MPI_UINT64_T, MPI_SUM, 0, _comm);
+
+    //std::vector<double> buffer;
+
+    //if (master_rank()) {
+    //    cout << "Reproducibly summing total of " << s << " elements" << endl;
+    //    buffer.resize(total);
+    //}
+
+
+    //MPI_Gather(data, size, MPI_DOUBLE,
+    //       master_rank() ? &buffer[0] : NULL, total, MPI_DOUBLE,
+    //       0, _comm);
+
+    //double sum;
+    //if (master_rank()) {
+    //    sum = std::accumulate(buffer.begin(), buffer.end(), 0.0);
+    //}
+
+    //MPI_Bcast(&sum, 1, MPI_DOUBLE, 0, _comm);
+
+    //if (master_rank()) {
+    //    cout << "Result = " << sum << endl;
+    //}
+
+
+#else
+    // TODO: warn user about unimplemented behavior
+    assert(0);
+    return 0.0;
+#endif
+
+
 }
 
 void ParallelContext::mpi_allreduce(double * data, size_t size, int op)

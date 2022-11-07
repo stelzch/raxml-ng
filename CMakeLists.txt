@@ -1,5 +1,6 @@
 cmake_minimum_required (VERSION 3.0.2 FATAL_ERROR)
 
+
 set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 set(CMAKE_DISABLE_SOURCE_CHANGES  ON)
 
@@ -25,6 +26,16 @@ set(USE_GMP OFF CACHE BOOL "Use GNU Multiple precision (GMP) library ")
 
 set(ENABLE_PTHREADS ${USE_PTHREADS})
 
+if(USE_REPRODUCIBLE)
+include(FetchContent)
+FetchContent_Declare(
+    binarytreesummation
+    GIT_REPOSITORY https://github.com/stelzch/binary_tree_summation.git
+    GIT_TAG 7ddc506aad609267804448b674e7c1a5333f1190
+)
+FetchContent_MakeAvailable(binarytreesummation)
+endif()
+
 if(USE_TERRAPHAST)
   set(GCC_MIN_VERSION "5.4")
   set(CLANG_MIN_VERSION "3.8")
@@ -39,10 +50,10 @@ endif()
 #set(CMAKE_CXX_EXTENSIONS OFF)
 
 # set these flags globally for all subprojects (libpll etc.)
-set (CMAKE_CXX_FLAGS_DEBUG    "-O3 -g" CACHE INTERNAL "")
-set (CMAKE_CXX_FLAGS_RELEASE  "-O3"    CACHE INTERNAL "")
-set (CMAKE_C_FLAGS_DEBUG    "-O3 -g" CACHE INTERNAL "")
-set (CMAKE_C_FLAGS_RELEASE  "-O3"    CACHE INTERNAL "")
+set (CMAKE_CXX_FLAGS_DEBUG    "-O0 -g" CACHE INTERNAL "")
+set (CMAKE_CXX_FLAGS_RELEASE  "-O1 -g"    CACHE INTERNAL "")
+set (CMAKE_C_FLAGS_DEBUG    "-O0 -g" CACHE INTERNAL "")
+set (CMAKE_C_FLAGS_RELEASE  "-O1 -g"    CACHE INTERNAL "")
 
 project (raxml-ng C CXX)
 
