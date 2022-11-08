@@ -6,6 +6,8 @@
 #include "Options.hpp"
 #include "AncestralStates.hpp"
 #include "loadbalance/PartitionAssignment.hpp"
+#include "summation/summation_strategy.hpp"
+#include "summation/binary_tree.hpp"
 
 struct spr_round_params
 {
@@ -75,6 +77,8 @@ private:
   doubleVector _persite_lnl;
   size_t _total_patterns;
   std::vector<double *> _part_site_lh;
+  std::unique_ptr<BinaryTreeSummation> summation_strategy;
+  bool summation_stats_printed = false;
 
   void init(const Options &opts, const Tree& tree, const PartitionedMSA& parted_msa,
             const IDVector& tip_msa_idmap, const PartitionAssignment& part_assign,

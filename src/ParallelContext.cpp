@@ -1,5 +1,4 @@
 #include "ParallelContext.hpp"
-#include <binarytreesummation.h>
 
 #include "Options.hpp"
 
@@ -469,20 +468,6 @@ void ParallelContext::parallel_reduce(double * data, size_t size, int op)
   RAXML_UNUSED(size);
   RAXML_UNUSED(op);
 #endif
-}
-
-double ParallelContext::reproducible_parallel_reduce(double* data, size_t size, int op)
-{
-#ifdef _RAXML_MPI
-    assert(op == PLLMOD_COMMON_REDUCE_SUM);
-    return binary_tree_sum(data, size);
-#else
-    // TODO: warn user about unimplemented behavior
-    assert(0);
-    return 0.0;
-#endif
-
-
 }
 
 void ParallelContext::mpi_allreduce(double * data, size_t size, int op)

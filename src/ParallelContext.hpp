@@ -75,7 +75,6 @@ public:
   static void mpi_reduce(double * data, size_t size, int op);
   static void mpi_allreduce(double * data, size_t size, int op);
   static void parallel_reduce_cb(void * context, double * data, size_t size, int op);
-  static double reproducible_parallel_reduce(double* data, size_t size, int op);
   static void parallel_reduce(double * data, size_t size, int op);
   static void thread_reduce(double * data, size_t size, int op);
   static void thread_broadcast(size_t source_id, void * data, size_t size);

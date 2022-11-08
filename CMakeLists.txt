@@ -1,6 +1,8 @@
 cmake_minimum_required (VERSION 3.0.2 FATAL_ERROR)
 
 
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 set(CMAKE_DISABLE_SOURCE_CHANGES  ON)
 
@@ -25,16 +27,6 @@ set(USE_TERRAPHAST ON CACHE BOOL "Use phylogentic terraces library (terraphast) 
 set(USE_GMP OFF CACHE BOOL "Use GNU Multiple precision (GMP) library ")
 
 set(ENABLE_PTHREADS ${USE_PTHREADS})
-
-if(USE_REPRODUCIBLE)
-include(FetchContent)
-FetchContent_Declare(
-    binarytreesummation
-    GIT_REPOSITORY https://github.com/stelzch/binary_tree_summation.git
-    GIT_TAG e895e32331bfe9f06f79e76c4c8d2ca2893cd00f
-)
-FetchContent_MakeAvailable(binarytreesummation)
-endif()
 
 if(USE_TERRAPHAST)
   set(GCC_MIN_VERSION "5.4")
@@ -95,7 +87,7 @@ endif()
 message (STATUS "Building ${CMAKE_BUILD_TYPE}")
 
 set (WARN_FLAGS               "-Wall -Wextra")
-set (CMAKE_CXX_FLAGS          "-std=c++11 ${WARN_FLAGS}")
+set (CMAKE_CXX_FLAGS          "${WARN_FLAGS}")
 
 if (ENABLE_GMP)
 #find_package(GMP REQUIRED)

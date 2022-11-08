@@ -66,8 +66,9 @@ set(RAXML_LIBS ${RAXML_LIBS} PARENT_SCOPE)
 
 
 if (USE_REPRODUCIBLE) 
+add_subdirectory(summation)
 message(STATUS Reproducibility enabled)
-set(RAXML_LIBS ${RAXML_LIBS} binarytreesummation)
+set(RAXML_LIBS ${RAXML_LIBS} summation)
 add_definitions(-DREPRODUCIBLE)
 endif()
 
