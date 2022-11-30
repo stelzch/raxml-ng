@@ -210,14 +210,7 @@ void TreeInfo::tree(const Tree& tree)
 
 double TreeInfo::loglh(bool incremental)
 {
-#ifdef REPRODUCIBLE
-  persite_loglh(_part_site_lh, incremental);
-  double result = reproducible_reduce(reduction_context);
-
-  return result;
-#else
   return pllmod_treeinfo_compute_loglh(_pll_treeinfo, incremental ? 1 : 0);
-#endif
 }
 
 double TreeInfo::persite_loglh(std::vector<double*> part_site_lh, bool incremental)

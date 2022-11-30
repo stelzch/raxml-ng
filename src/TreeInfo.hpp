@@ -6,6 +6,7 @@
 #include "Options.hpp"
 #include "AncestralStates.hpp"
 #include "loadbalance/PartitionAssignment.hpp"
+#include <binary_tree_summation.h>
 
 struct spr_round_params
 {
