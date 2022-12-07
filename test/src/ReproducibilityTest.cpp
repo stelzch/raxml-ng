@@ -68,6 +68,7 @@ TEST(ReproducibilityTest, loglh) {
         MPI_Comm_rank(sub_communicator, &sub_rank);
 
         // 1. Reinitialize ParallelContext
+        EXPECT_EQ(ParallelContext::num_threads(), 1);
         ParallelContext::init_mpi(0, nullptr, &sub_communicator);
         set_default_reduction_context_communicator(sub_communicator);
 
