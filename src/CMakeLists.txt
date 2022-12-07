@@ -66,16 +66,6 @@ set(RAXML_LIBS ${RAXML_LIBS} PARENT_SCOPE)
 
 
 if (USE_REPRODUCIBLE) 
-if(NOT DEFINED binarytreesummation_version)
-    set(binarytreesummation_version main)
-endif()
-include(FetchContent)
-FetchContent_Declare(
-        binarytreesummation
-        GIT_REPOSITORY https://git.ch-st.de/christoph/binary_tree_summation.git
-        GIT_TAG ${binarytreesummation_version}
-)
-FetchContent_MakeAvailable(binarytreesummation)
 message(STATUS Reproducibility enabled)
 set(RAXML_LIBS ${RAXML_LIBS} binarytreesummation)
 add_definitions(-DREPRODUCIBLE)
