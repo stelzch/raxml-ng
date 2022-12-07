@@ -46,4 +46,6 @@ endif()
 set_target_properties (raxml_test_module PROPERTIES OUTPUT_NAME raxml_test)
 set_target_properties (raxml_test_module PROPERTIES PREFIX "")
 
+target_compile_definitions(raxml_test_module PRIVATE -DTEST_DATA_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/data")
+
 add_test (raxml_test raxml_test --gtest_output=xml:${CMAKE_BINARY_DIR}/test/RAxMLTest.xml)
