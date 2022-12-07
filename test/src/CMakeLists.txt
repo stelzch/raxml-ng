@@ -1,11 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
 
-if(NOT GTEST_FOUND)
-    message (STATUS "GTest not found")
-    message (WARNING "Skipping building tests.")
-    return()
-endif()
-
 message (STATUS "Building tests")
 
 file (GLOB_RECURSE RAXML_TEST_SOURCES ${PROJECT_SOURCE_DIR}/test/src/*.cpp ${RAXML_SOURCES})
