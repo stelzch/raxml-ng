@@ -12,7 +12,8 @@ TEST(ReproducibilityTest, loglh) {
     int rank, comm_size;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
-    attach_debugger(rank == -1);
+    //
+    //attach_debugger(rank == 1);
 
     const int SITES = 460;
     const int TIPS = 354;
@@ -58,7 +59,8 @@ TEST(ReproducibilityTest, loglh) {
         bool participating = (rank < participating_processors);
         int group = participating ? 1 : 0;
         MPI_Comm sub_communicator;
-        MPI_Comm_split(MPI_COMM_WORLD, group, 0, &sub_communicator);
+        int ret = MPI_Comm_split(MPI_COMM_WORLD, group, 0, &sub_communicator);
+        EXPECT_EQ(ret, 0);
 
         if (!participating) {
             continue;
@@ -93,6 +95,9 @@ TEST(ReproducibilityTest, loglh) {
         double root_computed_loglh = computed_loglh;;
         MPI_Bcast(&root_computed_loglh, 1, MPI_DOUBLE,
                 0, sub_communicator);
+
+	MPI_Comm_free(&sub_communicator);
+
         EXPECT_EQ(computed_loglh, root_computed_loglh);
 
         if (participating_processors == 1) {

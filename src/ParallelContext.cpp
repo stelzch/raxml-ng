@@ -475,7 +475,9 @@ void ParallelContext::mpi_allreduce(double * data, size_t size, int op)
 #ifdef _RAXML_MPI
   if (_num_ranks > _num_groups)
   {
+#ifdef _RAXML_PTHREADS
     thread_barrier();
+#endif
 
     if (_thread_id == 0)
     {
@@ -498,9 +500,13 @@ void ParallelContext::mpi_allreduce(double * data, size_t size, int op)
 #endif
     }
 
+#ifdef _RAXML_PTHREADS
     if (_thread_group->num_threads > 1)
       thread_broadcast(0, data, size * sizeof(double));
+#endif
+
   }
+
 #else
   RAXML_UNUSED(data);
   RAXML_UNUSED(size);
