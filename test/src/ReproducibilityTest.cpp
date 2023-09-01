@@ -12,15 +12,13 @@ TEST(ReproducibilityTest, loglh) {
     int rank, comm_size;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
-    //
-    //attach_debugger(rank == 1);
 
     const int SITES = 460;
     const int TIPS = 354;
 
     const std::string msa_path = std::string(TEST_DATA_DIRECTORY) + "/354.phy";
+    std::cout << "Loading MSA from '" << msa_path << "' on rank " << rank << std::endl << std::flush;
 
-    std::cout << "Loading MSA from '" << msa_path << "'" << std::endl;
 
 
     PhylipStream msa_stream(msa_path);
@@ -30,10 +28,10 @@ TEST(ReproducibilityTest, loglh) {
 
     // Construct partitioned MSA
     PartitionedMSA partitioned_msa;
+    PartitionAssignment part_assign;
     partitioned_msa.emplace_part_info("partition_1", DataType::dna, "GTR", "");
     partitioned_msa.part_msa(0, std::move(msa));
 
-    PartitionAssignment part_assign;
     part_assign.assign_sites(0, 0, SITES);
 
     // Construct random tree
@@ -50,6 +48,8 @@ TEST(ReproducibilityTest, loglh) {
     EXPECT_EQ(tree.num_tips(), TIPS);
     EXPECT_EQ(partitioned_msa.part_count(), 1);
 
+    MPI_Barrier(MPI_COMM_WORLD);
+
     double expected_loglh;
     for (int participating_processors = 1; participating_processors <= comm_size; ++participating_processors) {
         MPI_Bcast(&expected_loglh, 1, MPI_DOUBLE,
@@ -64,6 +64,10 @@ TEST(ReproducibilityTest, loglh) {
 
         if (!participating) {
             continue;
+        }
+
+        if (rank == 0) {
+            std::cout << "\tn=" << participating_processors << std::endl << std::flush;
         }
 
         int sub_rank;
@@ -96,7 +100,7 @@ TEST(ReproducibilityTest, loglh) {
         MPI_Bcast(&root_computed_loglh, 1, MPI_DOUBLE,
                 0, sub_communicator);
 
-	MPI_Comm_free(&sub_communicator);
+        MPI_Comm_free(&sub_communicator);
 
         EXPECT_EQ(computed_loglh, root_computed_loglh);
 
@@ -107,6 +111,7 @@ TEST(ReproducibilityTest, loglh) {
             // 6b. Compare against previous result otherwise, expect them to be equal
             EXPECT_EQ(computed_loglh, expected_loglh);
         }
+
     }
 
 
