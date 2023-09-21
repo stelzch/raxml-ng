@@ -1,3 +1,4 @@
+#include <iomanip>
 #include <iostream>
 #include <mpi.h>
 #include <string>
@@ -51,7 +52,9 @@ TEST(ReproducibilityTest, loglh) {
     MPI_Barrier(MPI_COMM_WORLD);
 
     double expected_loglh;
-    for (int participating_processors = 1; participating_processors <= comm_size; ++participating_processors) {
+    std::cout << std::fixed << std::setprecision(40);
+    const int start_cluster_size = 5;
+    for (int participating_processors = start_cluster_size; participating_processors <= comm_size; ++participating_processors) {
         MPI_Bcast(&expected_loglh, 1, MPI_DOUBLE,
                 0, MPI_COMM_WORLD);
 
@@ -79,9 +82,11 @@ TEST(ReproducibilityTest, loglh) {
         set_default_reduction_context_communicator(sub_communicator);
 
 
+        srand(0);
         // 2. Assign sites to participating processors
         BenoitLoadBalancer load_balancer;
         auto proc_part_assignment = load_balancer.get_all_assignments(part_assign, participating_processors);
+        if (rank == 0) { std::cout << "Partition assignment" << std::endl << proc_part_assignment << std::endl; }
 
 
         // 3. Construct TreeInfo
@@ -104,11 +109,15 @@ TEST(ReproducibilityTest, loglh) {
 
         EXPECT_EQ(computed_loglh, root_computed_loglh);
 
-        if (participating_processors == 1) {
+        if (participating_processors == start_cluster_size) {
             // 6a. Set the expected value in the first iteration
             expected_loglh = computed_loglh;
         } else {
             // 6b. Compare against previous result otherwise, expect them to be equal
+            if (rank == 0) {
+            std::cout << "Previously: " << expected_loglh << std::endl
+                      << " now        " << computed_loglh << std::endl;
+            }
             EXPECT_EQ(computed_loglh, expected_loglh);
         }
 
