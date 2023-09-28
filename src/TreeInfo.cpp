@@ -112,7 +112,8 @@ void TreeInfo::init(const Options &opts, const Tree& tree, const PartitionedMSA&
     c /= total_weight;
 
 
-#ifdef REPRODUCIBLE
+#if 0
+  // TODO: find out whetehr this served any purpose
   int local_summands = part_assign.length();
   reduction_context = new_reduction_context(local_summands);
 
@@ -676,6 +677,7 @@ pll_partition_t* create_pll_partition(const Options& opts, const PartitionInfo& 
       tree.num_tips(),         /* number of tip sequences */
       tree.num_inner(),        /* number of CLV buffers */
       model.num_states(),      /* number of states in the data */
+      part_region.start,
       part_length,             /* number of alignment sites/patterns */
       model.num_submodels(),   /* number of different substitution models (LG4 = 4) */
       tree.num_branches(),     /* number of probability matrices */
