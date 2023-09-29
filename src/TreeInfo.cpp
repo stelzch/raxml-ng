@@ -111,25 +111,6 @@ void TreeInfo::init(const Options &opts, const Tree& tree, const PartitionedMSA&
   for (auto& c: _partition_contributions)
     c /= total_weight;
 
-
-#if 0
-  // TODO: find out whetehr this served any purpose
-  int local_summands = part_assign.length();
-  reduction_context = new_reduction_context(local_summands);
-
-
-  assert(part_assign.num_parts() == 1);
-  _part_site_lh.reserve(part_assign.num_parts());
-  _total_patterns = parted_msa.total_patterns();
-
-  // build up list
-  size_t index = 0;
-  for (auto it = part_assign.begin(); it != part_assign.end(); ++it) {
-      _part_site_lh.push_back(get_reduction_buffer(reduction_context));
-      index += it->length;
-  }
-
-#endif
 }
 
 TreeInfo::~TreeInfo ()
