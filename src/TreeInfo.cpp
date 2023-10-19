@@ -4,6 +4,7 @@
 
 #include "TreeInfo.hpp"
 #include "ParallelContext.hpp"
+#include "loadbalance/PartitionAssignment.hpp"
 
 #ifdef REPRODUCIBLE
 #include <mpi.h>
@@ -67,7 +68,7 @@ void TreeInfo::init(const Options &opts, const Tree& tree, const PartitionedMSA&
     if (part_range != part_assign.end())
     {
       /* create and init PLL partition structure */
-      pll_partition_t * partition = create_pll_partition(opts, pinfo, tip_msa_idmap,
+      pll_partition_t * partition = create_pll_partition(opts, pinfo, part_assign[p], tip_msa_idmap,
                                                          *part_range, weights);
 
       int retval = pllmod_treeinfo_init_partition(_pll_treeinfo, p, partition,
@@ -507,7 +508,7 @@ void set_partition_tips(const Options& opts, const MSA& msa, const IDVector& tip
   /* get "true" sequence offset considering that MSA can be partially loaded */
   auto seq_offset = msa.get_local_offset(part_region.start);
 
-//  printf("\n\n rank %lu, GLOBAL OFFSET %lu, LOCAL OFFSET %lu \n\n", ParallelContext::proc_id(), part_region.start, seq_offset);
+  printf("\n\n rank %lu, GLOBAL OFFSET %lu, LOCAL OFFSET %lu \n\n", ParallelContext::proc_id(), part_region.start, seq_offset);
 
   /* set pattern weights */
   if (!msa.weights().empty())
@@ -602,6 +603,7 @@ void set_partition_tips(const Options& opts, const MSA& msa, const IDVector& tip
 }
 
 pll_partition_t* create_pll_partition(const Options& opts, const PartitionInfo& pinfo,
+                                      const PartitionRange& part_assign,
                                       const IDVector& tip_msa_idmap,
                                       const PartitionRange& part_region, const uintVector& weights)
 {
@@ -654,12 +656,14 @@ pll_partition_t* create_pll_partition(const Options& opts, const PartitionInfo& 
   }
 
   BasicTree tree(msa.size());
+  //assert(part_assign.length == pinfo.length());
   pll_partition_t * partition = pll_partition_create(
       tree.num_tips(),         /* number of tip sequences */
       tree.num_inner(),        /* number of CLV buffers */
       model.num_states(),      /* number of states in the data */
-      part_region.start,
-      part_length,             /* number of alignment sites/patterns */
+      1,                       /* whether reductions must be performed in parallel */
+      part_assign.start,       /* global start index of the region */
+      part_assign.length,      /* number of alignment sites/patterns */
       model.num_submodels(),   /* number of different substitution models (LG4 = 4) */
       tree.num_branches(),     /* number of probability matrices */
       model.num_ratecats(),    /* number of (GAMMA) rate categories */
