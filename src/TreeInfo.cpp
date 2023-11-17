@@ -228,6 +228,9 @@ double TreeInfo::optimize_branches(double lh_epsilon, double brlen_smooth_factor
   if (_pll_treeinfo->params_to_optimize[0] & PLLMOD_OPT_PARAM_BRANCHES_ITERATIVE)
   {
     int max_iters = brlen_smooth_factor * RAXML_BRLEN_SMOOTHINGS;
+    auto attr = pll_svg_attrib_create();
+    pll_utree_export_svg(_pll_treeinfo->tree, _pll_treeinfo->root, attr, "tree.svg");
+    free(attr);
     new_loglh = -1 * pllmod_algo_opt_brlen_treeinfo(_pll_treeinfo,
                                                     _brlen_min,
                                                     _brlen_max,
