@@ -54,7 +54,9 @@ else()
 endif()
 
 
-set(RAXML_LIBS ${LIBPLL_LIBS} m)
+set(RAXML_LIBS ${LIBPLL_LIBS} m 
+    crypto # TODO: remove this dependency, it is only for debugging purposes
+)
 
 if(USE_TERRAPHAST)
   set(RAXML_LIBS ${RAXML_LOCALDEPS_DIR}/lib/libterraces.a ${RAXML_LIBS})
