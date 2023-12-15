@@ -65,3 +65,39 @@ const unsigned char *debug_hash_partition_clv(const pll_partition_t * partition)
 }
 
 
+
+void debug_array_to_file(const void *array, const size_t length, const char *fname) {
+    FILE *f = fopen(fname, "a");
+
+    size_t written = std::fwrite(array, 1, length, f);
+    assert(written == length);
+
+    std::fclose(f);
+}
+
+void debug_clvs_to_file(const pllmod_treeinfo_t *treeinfo, const char *fname) {
+    assert(treeinfo->partition_count == 1);
+    const pll_partition_t *partition = treeinfo->partitions[0];
+    const size_t clv_length = partition->sites * partition->states_padded * partition->rate_cats * sizeof(double);
+
+    const pll_utree_t& tree = *treeinfo->tree;
+
+    char filename[1024];
+    int rank;
+    int size;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    snprintf(filename, 1024, "%s_p%i_n%i_sites%i_states%i_rates%i-%libytes.clv",
+            fname, rank, size, partition->sites, partition->states_padded, partition->rate_cats, clv_length);
+
+    FILE *f = fopen(filename, "w");
+
+    for (unsigned int i = tree.tip_count; i < tree.tip_count +tree.inner_count; i++) {
+        const auto clv_index = tree.nodes[i]->clv_index;
+        const double *clv = treeinfo->partitions[0]->clv[clv_index];
+
+        size_t written = std::fwrite(clv, clv_length, 1, f);
+    }
+    std::fclose(f);
+
+}
