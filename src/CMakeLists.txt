@@ -74,7 +74,7 @@ add_definitions(-DREPRODUCIBLE)
 endif()
 
 message(STATUS "Libs: ${RAXML_LIBS}")
-target_link_libraries(raxml_module ${RAXML_LIBS})
+target_link_libraries(raxml_module ${RAXML_LIBS} ipcdebug)
 
 
 if (BUILD_AS_LIBRARY AND NOT APPLE)

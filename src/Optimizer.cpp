@@ -1,5 +1,6 @@
 #include "Optimizer.hpp"
 #include "debug.h"
+#include <ipc_debug.h>
 
 using namespace std;
 
@@ -84,6 +85,7 @@ double Optimizer::optimize_topology(TreeInfo& treeinfo, CheckpointManager& cm)
     cm.update_and_write(treeinfo);
     LOG_PROGRESS(loglh) << "Model parameter optimization (eps = " << fast_modopt_eps << ")" << endl;
     loglh = optimize_model(treeinfo, fast_modopt_eps);
+    debug_ipc_assert_equal(loglh);
 
     /* start spr rounds from the beginning */
     iter = 0;
@@ -121,12 +123,10 @@ double Optimizer::optimize_topology(TreeInfo& treeinfo, CheckpointManager& cm)
         ++iter;
         LOG_PROGRESS(best_loglh) << "AUTODETECT spr round " << iter << " (radius: " <<
             spr_params.radius_max << ")" << endl;
-        // Write CLVs to file (commented out because known divergence)
-        //char fname[512];
-        //snprintf(fname, 512, "%s_%i", "AUTODETECT", iter);
-        //debug_clvs_to_file(&treeinfo.pll_treeinfo(), fname);
-        //MPI_Barrier(MPI_COMM_WORLD);
         loglh = treeinfo.spr_round(spr_params);
+
+        //debug_ipc_assert_equal(loglh);
+    
 
         if (loglh - best_loglh > 0.1)
         {

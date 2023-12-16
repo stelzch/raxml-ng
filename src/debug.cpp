@@ -4,10 +4,14 @@
 
 // TODO: remove this debug file before merging with master!! Not meant for production!!
 #include "debug.h"
+#include <cstring>
+#include <new>
 #include <pll.h>
 #include "io/file_io.hpp"
 #include <string>
 #include <openssl/sha.h>
+#include <cerrno>
+#include <cstdlib>
 
 void debug_to_newick_file(const pll_utree_t& tree, const char *fname) {
     std::string filename(fname);

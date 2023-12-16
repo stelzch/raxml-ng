@@ -11,7 +11,15 @@ FetchContent_Declare(
         GIT_REPOSITORY https://git.ch-st.de/christoph/binary_tree_summation.git
         GIT_TAG ${binarytreesummation_version}
 )
-FetchContent_MakeAvailable(googletest binarytreesummation)
+FetchContent_Declare(
+        ipcdebug
+        GIT_REPOSITORY https://git.ch-st.de/christoph/ipc_debug.git
+        GIT_TAG ${ipcdebug_version}
+)
+FetchContent_MakeAvailable(googletest binarytreesummation ipcdebug)
+
+add_executable(mtest test.cpp)
+target_link_libraries(mtest ipcdebug)
 
 
 set(CMAKE_CXX_STANDARD 20)
