@@ -8,6 +8,7 @@
 
 #ifdef REPRODUCIBLE
 #include <mpi.h>
+#include <ipc_debug.h>
 #endif
 
 using namespace std;
@@ -386,6 +387,27 @@ double TreeInfo::optimize_params(int params_to_optimize, double lh_epsilon)
     assert_lh_improvement(cur_loglh, new_loglh, "BRLEN");
     cur_loglh = new_loglh;
   }
+
+  // Check that values are the same
+  assert(_pll_treeinfo->partition_count == 1);
+  auto part = _pll_treeinfo->partitions[0];
+  // Base frequencies
+  debug_ipc_assert_equal_array(
+          part->frequencies[0],
+          sizeof(double) * 4);
+
+  // Substitution rates
+  debug_ipc_assert_equal_array(
+          part->frequencies[0],
+          sizeof(double) * 4);
+
+  // Alpha parameter
+  debug_ipc_assert_equal(_pll_treeinfo->alphas[0]);
+
+  // Pinv
+  debug_ipc_assert_equal(_pll_treeinfo->partitions[0]->prop_invar[_pll_treeinfo->param_indices[0][0]]); // see  treeinfo_get_pinv for original source
+
+
 
   return new_loglh;
 }
