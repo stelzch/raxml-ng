@@ -18,10 +18,6 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(googletest binarytreesummation ipcdebug)
 
-add_executable(mtest test.cpp)
-target_link_libraries(mtest ipcdebug)
-
-
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
