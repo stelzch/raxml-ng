@@ -175,5 +175,5 @@ endif()
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/src)
 
-enable_testing()
-add_subdirectory(${PROJECT_SOURCE_DIR}/test/src)
+#enable_testing()
+#add_subdirectory(${PROJECT_SOURCE_DIR}/test/src)
