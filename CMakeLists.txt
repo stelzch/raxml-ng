@@ -19,7 +19,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(googletest binarytreesummation ipcdebug)
 
 set(CMAKE_CXX_STANDARD 23)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
+set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 set(CMAKE_DISABLE_SOURCE_CHANGES  ON)
 

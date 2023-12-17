@@ -6,7 +6,7 @@ in
     version = "0.0.1";
     builder = "${pkgs.bash}/bin/bash";
     args = [ ./test-build.sh ];
-    buildInputs = with pkgs; [ stdenv coreutils gnumake gcc cmake mpi bison flex gmp git gtest gbenchmark];
+    buildInputs = with pkgs; [ coreutils gnumake gcc cmake mpi bison flex gmp git gtest gbenchmark openssl];
     system = builtins.currentSystem;
     src = ./.;
 
