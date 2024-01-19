@@ -16,6 +16,8 @@ mpirun \
 	--pat-comp off \
     --site-repeats off \
     --tip-inner off \
+    --simd none \
+    --threads 1 \
 	--workers 1 \
 	--model GTR+G \
 	--tree rand{1}
