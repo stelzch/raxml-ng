@@ -132,6 +132,7 @@ double Optimizer::optimize_topology(TreeInfo& treeinfo, CheckpointManager& cm)
             brlen[e] = treeinfo.pll_treeinfo().travbuffer[i]->length;
         }
         // Assert branch lengths are equal
+        DEBUG_IPC_CHECKPOINT();
         debug_ipc_assert_equal_array(brlen.data(), e * sizeof(double));
         debug_ipc_assert_equal(loglh);
     

@@ -391,6 +391,7 @@ double TreeInfo::optimize_params(int params_to_optimize, double lh_epsilon)
   // Check that values are the same
   assert(_pll_treeinfo->partition_count == 1);
   auto part = _pll_treeinfo->partitions[0];
+  DEBUG_IPC_CHECKPOINT();
   // Base frequencies
   debug_ipc_assert_equal_array(
           part->frequencies[0],
