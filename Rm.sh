@@ -18,5 +18,6 @@ mpirun \
     --tip-inner off \
     --simd none \
 	--workers 1 \
+    --threads 1 \
 	--model GTR+G \
 	--tree rand{1}
