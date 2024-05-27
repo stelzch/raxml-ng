@@ -23,9 +23,7 @@
 #include <cstdint>
 
 #include <memory>
-#include <ipc_debug.h>
 
-#include "ipc_debug.h"
 #include "version.h"
 #include "common.h"
 #include "MSA.hpp"
@@ -1640,8 +1638,6 @@ void balance_load(RaxmlInstance& instance)
   const auto my_assignment = instance.proc_part_assign[ParallelContext::rank_id()];
   assert(my_assignment.num_parts() == 1);
   
-  debug_ipc_mpi_set_data_distribution(my_assignment[0].start);
-
   LOG_INFO_TS << "Data distribution: " << PartitionAssignmentStats(instance.proc_part_assign) << endl;
   LOG_VERB << endl << instance.proc_part_assign;
 }

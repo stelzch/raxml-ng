@@ -54,9 +54,7 @@ else()
 endif()
 
 
-set(RAXML_LIBS ${LIBPLL_LIBS} m 
-    crypto # TODO: remove this dependency, it is only for debugging purposes
-)
+set(RAXML_LIBS ${LIBPLL_LIBS} m)
 
 if(USE_TERRAPHAST)
   set(RAXML_LIBS ${RAXML_LOCALDEPS_DIR}/lib/libterraces.a ${RAXML_LIBS})
@@ -73,9 +71,7 @@ set(RAXML_LIBS ${RAXML_LIBS} binarytreesummation)
 add_definitions(-DREPRODUCIBLE)
 endif()
 
-message(STATUS "Libs: ${RAXML_LIBS}")
-target_link_libraries(raxml_module ${RAXML_LIBS} ipcdebug)
-
+target_link_libraries(raxml_module ${RAXML_LIBS})
 
 if (BUILD_AS_LIBRARY AND NOT APPLE)
   target_link_libraries(raxml_module gcc_s gcc)

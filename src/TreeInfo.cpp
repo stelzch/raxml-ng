@@ -8,7 +8,6 @@
 
 #ifdef REPRODUCIBLE
 #include <mpi.h>
-#include <ipc_debug.h>
 #endif
 
 using namespace std;
@@ -388,28 +387,6 @@ double TreeInfo::optimize_params(int params_to_optimize, double lh_epsilon)
     cur_loglh = new_loglh;
   }
 
-  // Check that values are the same
-  assert(_pll_treeinfo->partition_count == 1);
-  auto part = _pll_treeinfo->partitions[0];
-  DEBUG_IPC_CHECKPOINT();
-  // Base frequencies
-  debug_ipc_assert_equal_array(
-          part->frequencies[0],
-          sizeof(double) * 4);
-
-  // Substitution rates
-  debug_ipc_assert_equal_array(
-          part->frequencies[0],
-          sizeof(double) * 4);
-
-  // Alpha parameter
-  debug_ipc_assert_equal(_pll_treeinfo->alphas[0]);
-
-  // Pinv
-  debug_ipc_assert_equal(_pll_treeinfo->partitions[0]->prop_invar[_pll_treeinfo->param_indices[0][0]]); // see  treeinfo_get_pinv for original source
-
-
-
   return new_loglh;
 }
 
@@ -531,7 +508,7 @@ void set_partition_tips(const Options& opts, const MSA& msa, const IDVector& tip
   /* get "true" sequence offset considering that MSA can be partially loaded */
   auto seq_offset = msa.get_local_offset(part_region.start);
 
-  printf("\n\n rank %lu, GLOBAL OFFSET %lu, LOCAL OFFSET %lu \n\n", ParallelContext::proc_id(), part_region.start, seq_offset);
+//  printf("\n\n rank %lu, GLOBAL OFFSET %lu, LOCAL OFFSET %lu \n\n", ParallelContext::proc_id(), part_region.start, seq_offset);
 
   /* set pattern weights */
   if (!msa.weights().empty())
@@ -684,7 +661,6 @@ pll_partition_t* create_pll_partition(const Options& opts, const PartitionInfo& 
       tree.num_tips(),         /* number of tip sequences */
       tree.num_inner(),        /* number of CLV buffers */
       model.num_states(),      /* number of states in the data */
-      1,                       /* whether reductions must be performed in parallel */
       part_assign.start,       /* global start index of the region */
       part_assign.length,      /* number of alignment sites/patterns */
       model.num_submodels(),   /* number of different substitution models (LG4 = 4) */

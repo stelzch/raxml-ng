@@ -1,6 +1,4 @@
 #include "Optimizer.hpp"
-#include "debug.h"
-#include <ipc_debug.h>
 
 using namespace std;
 
@@ -86,8 +84,6 @@ double Optimizer::optimize_topology(TreeInfo& treeinfo, CheckpointManager& cm)
     LOG_PROGRESS(loglh) << "Model parameter optimization (eps = " << fast_modopt_eps << ")" << endl;
     loglh = optimize_model(treeinfo, fast_modopt_eps);
 
-    debug_ipc_assert_equal(loglh);
-
     /* start spr rounds from the beginning */
     iter = 0;
   }
@@ -125,17 +121,6 @@ double Optimizer::optimize_topology(TreeInfo& treeinfo, CheckpointManager& cm)
         LOG_PROGRESS(best_loglh) << "AUTODETECT spr round " << iter << " (radius: " <<
             spr_params.radius_max << ")" << endl;
         loglh = treeinfo.spr_round(spr_params);
-
-        const auto e = treeinfo.pll_treeinfo().tree->edge_count + 1;
-        vector<double> brlen(e);
-        for (uint32_t i = 0; i < e; i++) {
-            brlen[e] = treeinfo.pll_treeinfo().travbuffer[i]->length;
-        }
-        // Assert branch lengths are equal
-        DEBUG_IPC_CHECKPOINT();
-        debug_ipc_assert_equal_array(brlen.data(), e * sizeof(double));
-        debug_ipc_assert_equal(loglh);
-    
 
         if (loglh - best_loglh > 0.1)
         {

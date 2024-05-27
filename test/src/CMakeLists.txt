@@ -23,7 +23,7 @@ if(USE_TERRAPHAST)
   add_dependencies(raxml_test_module terraces)
 endif()
 
-target_link_libraries (raxml_test_module ${GTEST_BOTH_LIBRARIES} -pthread GTest::gtest_main ipcdebug)
+target_link_libraries (raxml_test_module ${GTEST_BOTH_LIBRARIES} -pthread GTest::gtest_main)
 
 target_link_libraries (raxml_test_module ${MPI_CXX_LIBRARIES})
 
