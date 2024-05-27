@@ -2,7 +2,6 @@
 
 #include "Options.hpp"
 
-#include <ipc_debug.h>
 #include "util/EnergyMonitor.hpp"
 
 #include<fstream>
@@ -92,7 +91,6 @@ void ParallelContext::init_mpi(int argc, char * argv[], void * comm)
 //    printf("nodes: %lu\n", _num_nodes);
     const char *debug_rank = std::getenv("DEBUG_MPI_RANK");
     attach_debugger(debug_rank != NULL && _rank_id == atoi(debug_rank));
-    debug_ipc_init();
   }
 #else
   RAXML_UNUSED(argc);
