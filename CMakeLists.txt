@@ -6,12 +6,16 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/google/googletest.git
     GIT_TAG 58d77fa8070e8cec2dc1ed015d66b454c8d78850 # release-1.12.1
 )
+if(DEFINED REPRODUCIBLE)
 FetchContent_Declare(
         binarytreesummation
         GIT_REPOSITORY https://git.ch-st.de/christoph/binary_tree_summation.git
         GIT_TAG ${binarytreesummation_version}
 )
-FetchContent_MakeAvailable(googletest binarytreesummation)
+FetcHContent_MakeAvailable(binarytreesummation)
+endif()
+
+FetchContent_MakeAvailable(googletest)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)

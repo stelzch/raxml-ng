@@ -6,7 +6,9 @@
 #include "Options.hpp"
 #include "AncestralStates.hpp"
 #include "loadbalance/PartitionAssignment.hpp"
+#ifdef REPRODUCIBLE
 #include <binary_tree_summation.h>
+#endif
 
 struct spr_round_params
 {

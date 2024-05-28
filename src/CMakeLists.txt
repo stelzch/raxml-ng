@@ -65,10 +65,10 @@ endif()
 set(RAXML_LIBS ${RAXML_LIBS} PARENT_SCOPE)
 
 
-if (USE_REPRODUCIBLE) 
-message(STATUS Reproducibility enabled)
+if (DEFINED REPRODUCIBLE) 
+message(STATUS Reproducibility mode ${REPRODUCIBLE}enabled)
 set(RAXML_LIBS ${RAXML_LIBS} binarytreesummation)
-add_definitions(-DREPRODUCIBLE=${USE_REPRODUCIBLE})
+add_definitions(-DREPRODUCIBLE=${REPRODUCIBLE})
 endif()
 
 target_link_libraries(raxml_module ${RAXML_LIBS})
