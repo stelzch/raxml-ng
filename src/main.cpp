@@ -3322,8 +3322,17 @@ extern "C" int dll_main(int argc, char** argv, void* comm)
 
 #else
 
+#define _STRINGIZE(x) #x
+#define STRINGIZE(x) _STRINGIZE(x)
+#ifdef REPRODUCIBLE
+const std::string reproducibility_mode = STRINGIZE(REPRODUCIBLE);
+#else
+const std::string reproducibility_mode = "none";
+#endif
+
 int main(int argc, char** argv)
 {
+  printf("[INFO] Reproducibility mode: %s\n", reproducibility_mode.c_str());
   auto retval = internal_main(argc, argv, 0);
   return retval;
 }

@@ -183,7 +183,6 @@ Tree Tree::buildParsimonyConstrained(const PartitionedMSA& parted_msa, unsigned 
     auto partition = pll_partition_create(taxon_count,
                                          0,   /* number of CLVs */
                                          model.num_states(),
-                                         0,
                                          0, // TODO: set correct index
                                          msa.length(),
                                          1,
