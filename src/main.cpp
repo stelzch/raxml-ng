@@ -1636,7 +1636,7 @@ void balance_load(RaxmlInstance& instance)
       instance.load_balancer->get_all_assignments(part_sizes, ParallelContext::threads_per_group());
 
   const auto my_assignment = instance.proc_part_assign[ParallelContext::rank_id()];
-  assert(my_assignment.num_parts() == 1);
+  //assert(my_assignment.num_parts() == 1);
   
   LOG_INFO_TS << "Data distribution: " << PartitionAssignmentStats(instance.proc_part_assign) << endl;
   LOG_VERB << endl << instance.proc_part_assign;
@@ -3134,8 +3134,8 @@ int internal_main(int argc, char** argv, void* comm)
   }
 
   /* now get to the real stuff */
-  try
-  {
+  //try
+  //{
     // make sure all MPI ranks use the same random seed
     ParallelContext::mpi_broadcast(&opts.random_seed, sizeof(long));
     srand(opts.random_seed);
@@ -3302,12 +3302,15 @@ int internal_main(int argc, char** argv, void* comm)
       cm.remove();
       opts.remove_tmp_files();
     }
+    /*
   }
   catch(exception& e)
   {
+    throw e; // DEBUG ONLY: Do not handle exception
     LOG_ERROR << endl << "ERROR: " << e.what() << endl << endl;
     retval = EXIT_FAILURE;
   }
+  */
 
   return clean_exit(retval);
 }

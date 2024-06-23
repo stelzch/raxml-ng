@@ -65,11 +65,22 @@ void TreeInfo::init(const Options &opts, const Tree& tree, const PartitionedMSA&
     total_weight += _partition_contributions[p];
 
     PartitionAssignment::const_iterator part_range = part_assign.find(p);
-    if (part_range != part_assign.end())
+
+    /* create a new communicator for this partition. This is necessary for the reproducible reduction and can't happen inside 
+     * libpll's pll_partition_create because libpll is oblivious to our MPI implementation
+     */
+    MPI_Comm partition_comm;
+    bool partition_local = part_range != part_assign.end();
+    {
+        // TODO: Remove MPI_COMM_WORLD, let ParallelContext handle the splitting in case we are not compiling with MPI support
+        MPI_Comm_split(MPI_COMM_WORLD, partition_local ? 0 : MPI_UNDEFINED, 0, &partition_comm);
+    }
+
+    if (partition_local)
     {
       /* create and init PLL partition structure */
-      pll_partition_t * partition = create_pll_partition(opts, pinfo, part_assign[p], tip_msa_idmap,
-                                                         *part_range, weights);
+      pll_partition_t * partition = create_pll_partition(opts, pinfo, *part_range, tip_msa_idmap,
+                                                         *part_range, weights, partition_comm);
 
       int retval = pllmod_treeinfo_init_partition(_pll_treeinfo, p, partition,
                                                   params_to_optimize,
@@ -605,7 +616,8 @@ void set_partition_tips(const Options& opts, const MSA& msa, const IDVector& tip
 pll_partition_t* create_pll_partition(const Options& opts, const PartitionInfo& pinfo,
                                       const PartitionRange& part_assign,
                                       const IDVector& tip_msa_idmap,
-                                      const PartitionRange& part_region, const uintVector& weights)
+                                      const PartitionRange& part_region, const uintVector& weights,
+                                      const MPI_Comm comm)
 {
   const MSA& msa = pinfo.msa();
   const Model& model = pinfo.model();
@@ -661,8 +673,9 @@ pll_partition_t* create_pll_partition(const Options& opts, const PartitionInfo& 
       tree.num_tips(),         /* number of tip sequences */
       tree.num_inner(),        /* number of CLV buffers */
       model.num_states(),      /* number of states in the data */
+      static_cast<void*>(comm),/* MPI communicator used for reproducible reduction */
       part_assign.start,       /* global start index of the region */
-      part_assign.length,      /* number of alignment sites/patterns */
+      part_length,             /* number of alignment sites/patterns */
       model.num_submodels(),   /* number of different substitution models (LG4 = 4) */
       tree.num_branches(),     /* number of probability matrices */
       model.num_ratecats(),    /* number of (GAMMA) rate categories */

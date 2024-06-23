@@ -90,6 +90,6 @@ void assign(Model& model, const TreeInfo& treeinfo, size_t partition_id);
 pll_partition_t* create_pll_partition(const Options& opts, const PartitionInfo& pinfo,
                                       const PartitionRange& part_assign,
                                       const IDVector& tip_msa_idmap,
-                                      const PartitionRange& part_region, const uintVector& weights);
+                                      const PartitionRange& part_region, const uintVector& weights, const MPI_Comm comm);
 
 #endif /* RAXML_TREEINFO_HPP_ */

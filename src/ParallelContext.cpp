@@ -371,7 +371,6 @@ void ParallelContext::thread_barrier()
   }
 }
 
-
 void ParallelContext::thread_reduce(double * data, size_t size, int op)
 {
   /* synchronize */
@@ -414,6 +413,21 @@ void ParallelContext::thread_reduce(double * data, size_t size, int op)
           data[i] = min(data[i], double_buf[j * size + i]);
       }
       break;
+      case PLLMOD_COMMON_REDUCE_OR:
+      {
+        data[i] = 0;
+
+        static_assert(sizeof(double) == sizeof(uint64_t));
+
+        /* Bit-wise operations are not allowed on floating-point values, need to cast to integer */
+        uint64_t *buf = reinterpret_cast<uint64_t *>(&double_buf[i]);
+        uint64_t *idata = reinterpret_cast<uint64_t *>(&data[i]);
+
+        for (j = 0; j < num_group_threads; ++j)
+          idata[i] |= buf[j * size + i];
+
+      }
+      break;
     }
   }
 }
@@ -430,6 +444,8 @@ void ParallelContext::mpi_reduce(double * data, size_t size, int op)
         reduce_op = MPI_MAX;
       else if (op == PLLMOD_COMMON_REDUCE_MIN)
         reduce_op = MPI_MIN;
+      else if (op == PLLMOD_COMMON_REDUCE_OR)
+        reduce_op = MPI_BOR;
       else
         assert(0);
 
@@ -488,11 +504,18 @@ void ParallelContext::mpi_allreduce(double * data, size_t size, int op)
         reduce_op = MPI_MAX;
       else if (op == PLLMOD_COMMON_REDUCE_MIN)
         reduce_op = MPI_MIN;
+      else if (op == PLLMOD_COMMON_REDUCE_OR)
+        reduce_op = MPI_BOR;
       else
         assert(0);
 
 #if 1
-      MPI_Allreduce(MPI_IN_PLACE, data, size, MPI_DOUBLE, reduce_op, _comm);
+      if (reduce_op == MPI_BOR) {
+        // bit-wise or not defined for MPI_DOUBLE, using integer type instead
+        MPI_Allreduce(MPI_IN_PLACE, data, size, MPI_UNSIGNED_LONG, reduce_op, _comm);
+      } else {
+        MPI_Allreduce(MPI_IN_PLACE, data, size, MPI_DOUBLE, reduce_op, _comm);
+      }
 #else
       // not sure if MPI_IN_PLACE will work in all cases...
       MPI_Allreduce(data, _parallel_buf.data(), size, MPI_DOUBLE, reduce_op, _comm);
