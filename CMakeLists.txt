@@ -12,10 +12,19 @@ FetchContent_Declare(
         GIT_REPOSITORY https://git.ch-st.de/christoph/binary_tree_summation.git
         GIT_TAG ${binarytreesummation_version}
 )
-FetcHContent_MakeAvailable(binarytreesummation)
+FetchContent_MakeAvailable(binarytreesummation)
+endif()
+
+if(DEFINED IPCDEBUG)
+FetchContent_Declare(ipcdebug
+    GIT_REPOSITORY https://git.ch-st.de/christoph/ipc_debug.git
+    GIT_TAG ${ipcdebug_version}
+)
+FetchContent_MakeAvailable(ipcdebug)
 endif()
 
 FetchContent_MakeAvailable(googletest)
+
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
@@ -62,6 +71,11 @@ set (CMAKE_CXX_FLAGS_DEBUG    "-O3 -g" CACHE INTERNAL "")
 set (CMAKE_CXX_FLAGS_RELEASE  "-O3 -g"    CACHE INTERNAL "")
 set (CMAKE_C_FLAGS_DEBUG    "-O3 -g" CACHE INTERNAL "")
 set (CMAKE_C_FLAGS_RELEASE  "-O3 -g"    CACHE INTERNAL "")
+
+if(DEFINED IPCDEBUG)
+    set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DIPCDEBUG=1")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DIPCDEBUG=1")
+endif()
 
 project (raxml-ng C CXX)
 

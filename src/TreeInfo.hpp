@@ -6,6 +6,8 @@
 #include "Options.hpp"
 #include "AncestralStates.hpp"
 #include "loadbalance/PartitionAssignment.hpp"
+#include <mpi.h>
+
 #ifdef REPRODUCIBLE
 #include <binary_tree_summation.h>
 #endif

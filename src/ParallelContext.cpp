@@ -9,6 +9,10 @@
 #include<iostream>
 #include<cstdlib>
 
+#if IPCDEBUG
+#include <ipc_debug.h>
+#endif
+
 using namespace std;
 
 void __attribute__((optimize("O0"))) attach_debugger(bool condition) {
@@ -91,6 +95,10 @@ void ParallelContext::init_mpi(int argc, char * argv[], void * comm)
 //    printf("nodes: %lu\n", _num_nodes);
     const char *debug_rank = std::getenv("DEBUG_MPI_RANK");
     attach_debugger(debug_rank != NULL && _rank_id == atoi(debug_rank));
+
+#ifdef IPCDEBUG
+    debug_ipc_init();
+#endif
   }
 #else
   RAXML_UNUSED(argc);

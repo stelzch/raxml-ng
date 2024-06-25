@@ -33,9 +33,11 @@ build/
 bin/
 build-mpi/
 build-static/
+build-*/
 release/
 
 # Eclipse project files
 .cproject
 .project
 .settings/
+

@@ -56,13 +56,17 @@ endif()
 
 set(RAXML_LIBS ${LIBPLL_LIBS} m)
 
+if(DEFINED IPCDEBUG)
+    set(RAXML_LIBS ${RAXML_LIBS} crypto ipcdebug)
+endif()
+
 if(USE_TERRAPHAST)
   set(RAXML_LIBS ${RAXML_LOCALDEPS_DIR}/lib/libterraces.a ${RAXML_LIBS})
   add_dependencies(raxml_module terraces)
 endif()
 
 # export to the parent dir to use in GTest makefile
-set(RAXML_LIBS ${RAXML_LIBS} PARENT_SCOPE)
+set(RAXML_LIBS ${RAXML_LIBS} Backward::Interface PARENT_SCOPE)
 
 
 if (DEFINED REPRODUCIBLE) 

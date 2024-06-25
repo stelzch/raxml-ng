@@ -1,5 +1,9 @@
 #include "Optimizer.hpp"
 
+#if IPCDEBUG
+#include <ipc_debug.h>
+#endif
+
 using namespace std;
 
 Optimizer::Optimizer (const Options &opts) :
@@ -121,6 +125,12 @@ double Optimizer::optimize_topology(TreeInfo& treeinfo, CheckpointManager& cm)
         LOG_PROGRESS(best_loglh) << "AUTODETECT spr round " << iter << " (radius: " <<
             spr_params.radius_max << ")" << endl;
         loglh = treeinfo.spr_round(spr_params);
+
+#if IPCDEBUG
+        DEBUG_IPC_CHECKPOINT();
+        debug_ipc_assert_equal(loglh);
+#endif
+
 
         if (loglh - best_loglh > 0.1)
         {
