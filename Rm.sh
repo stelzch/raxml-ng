@@ -18,7 +18,6 @@ fi
 out=R_partial_avx2_${PREFIX}_p${nproc} 
 echo Prefix is $out, build folder $variant
 mpirun \
-    --use-hwthread-cpus \
 	-np $nproc $variant/bin/raxml-ng-mpi --prefix $out \
 	--redo \
     --log DEBUG --precision 50\
