@@ -1,5 +1,5 @@
 #!/bin/bash
-binarytreesummation_version=d51c3a9c616b9b939ab44eea38e791fdb4951492
+binarytreesummation_version=a144cddc6d474b150a58fac6750fb7a319e75af7
 ipcdebug_version=8cf2664687d175037f3b42fd4359dde2ec4a50e3
 ${CMAKE:-cmake} -B build-bts -DUSE_MPI=ON -DBUILD_TESTS=OFF \
     -DREPRODUCIBLE=BINARYTREESUMMATION \
