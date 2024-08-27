@@ -58,10 +58,10 @@ endif()
 #set(CMAKE_CXX_EXTENSIONS OFF)
 
 # set these flags globally for all subprojects (libpll etc.)
-set (CMAKE_CXX_FLAGS_DEBUG    "-O3 -fsanitize=undefined -Wall -g" CACHE INTERNAL "")
-set (CMAKE_CXX_FLAGS_RELEASE  "-O3 -fsanitize=undefined -Wall -g"    CACHE INTERNAL "")
-set (CMAKE_C_FLAGS_DEBUG    "-O3 -fsanitize=undefined -Wall -g" CACHE INTERNAL "")
-set (CMAKE_C_FLAGS_RELEASE  "-O3 -fsanitize=undefined -Wall -g"    CACHE INTERNAL "")
+set (CMAKE_CXX_FLAGS_DEBUG    "-O3 -g" CACHE INTERNAL "")
+set (CMAKE_CXX_FLAGS_RELEASE  "-O3 -g"    CACHE INTERNAL "")
+set (CMAKE_C_FLAGS_DEBUG    "-O3 -g" CACHE INTERNAL "")
+set (CMAKE_C_FLAGS_RELEASE  "-O3 -g"    CACHE INTERNAL "")
 
 project (raxml-ng C CXX)
 
