@@ -3332,7 +3332,7 @@ const std::string reproducibility_mode = "none";
 
 int main(int argc, char** argv)
 {
-  printf("[INFO] Reproducibility mode: %s\n", reproducibility_mode.c_str());
+  printf("[INFO] Reproducibility mode %s\n", reproducibility_mode.c_str());
   auto retval = internal_main(argc, argv, 0);
   return retval;
 }
