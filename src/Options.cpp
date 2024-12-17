@@ -1,4 +1,7 @@
 #include "Options.hpp"
+#ifdef REPRODUCIBLE
+#include "binary_tree_summation.h"
+#endif
 //#include <stdlib.h>
 #include <climits>
 
@@ -490,6 +493,14 @@ std::ostream& operator<<(std::ostream& stream, const Options& opts)
 
   if (opts.num_threads > 1)
     stream << ", thread pinning: " << (opts.thread_pinning ? "ON" : "OFF");
+  stream << endl;
+
+  stream << "  Reproducible Reduce: ";
+#ifdef REPRODUCIBLE
+  stream << get_reproducible_reduction_mode();
+#else
+  stream << "off";
+#endif
   stream << endl;
 
   stream << endl;

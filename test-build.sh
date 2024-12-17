@@ -1,5 +1,5 @@
 #!/bin/bash
-binarytreesummation_version=114857b2b532f57b275d0a9e48f149fd6419686a
+binarytreesummation_version=c08203d8faffc22664daaa908bd133f2221c1a40
 ipcdebug_version=06ab8697e1ffe22904488866de2cc057e7a78393
 ${CMAKE:-cmake} -B build -DUSE_MPI=ON -DBUILD_TESTS=OFF \
     -DREPRODUCIBLE=REPROBLAS \

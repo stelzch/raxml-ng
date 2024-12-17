@@ -2526,6 +2526,10 @@ void print_final_output(const RaxmlInstance& instance, const CheckpointFile& che
         " seconds (total with restarts)";
   }
 
+#ifdef REPRODUCIBLE
+  LOG_INFO << "\nReproducible Reductions: " << get_reproducible_reduction_counter();
+#endif
+
   auto used_wh = instance.used_wh;
   if (used_wh > 0.1)
   {
@@ -3322,17 +3326,9 @@ extern "C" int dll_main(int argc, char** argv, void* comm)
 
 #else
 
-#define _STRINGIZE(x) #x
-#define STRINGIZE(x) _STRINGIZE(x)
-#ifdef REPRODUCIBLE
-const std::string reproducibility_mode = STRINGIZE(REPRODUCIBLE);
-#else
-const std::string reproducibility_mode = "none";
-#endif
-
 int main(int argc, char** argv)
 {
-  printf("[INFO] Reproducibility mode %s\n", reproducibility_mode.c_str());
+
   auto retval = internal_main(argc, argv, 0);
   return retval;
 }
