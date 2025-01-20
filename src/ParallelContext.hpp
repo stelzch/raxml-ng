@@ -187,5 +187,5 @@ private:
                            const std::function<void()>& thread_main);
   static void detect_num_nodes();
 };
-void attach_debugger(bool);
+void my_attach_debugger(bool);
 #endif /* RAXML_PARALLELCONTEXT_HPP_ */
