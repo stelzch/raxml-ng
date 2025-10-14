@@ -155,6 +155,36 @@ template <> struct std::hash<SubstitutionModelDescriptor>
 static_assert(std::is_copy_constructible<SubstitutionModelDescriptor>(),
               "necessary for use as key in std::unordered_map");
 
+
+/** Some DNA matrices are named differently depending on the frequency specifier.
+ * This function resolves these inconsistencies (e.g. GTR+FE -> SYM+FE)
+ */
+std::string normalize_dna_model_name(const std::string &model_name)
+{
+  static const std::array<std::pair<string, string>, 10> dna_model_name_with_freq{
+      {{"F81+FE", "JC+FE"},
+      {"HKY+FE", "K80+FE"},
+      {"TPM1+FO", "TPM1uf+FO"},
+      {"TPM2+FO", "TPM2uf+FO"},
+      {"TPM3+FO", "TPM3uf+FO"},
+      {"TIM1+FO", "TIM1uf+FO"},
+      {"TIM2+FO", "TIM2uf+FO"},
+      {"TIM3+FO", "TIM3uf+FO"},
+      {"TVM+FE", "TVMef+FE"},
+      {"GTR+FE", "SYM+FE"},
+      }};
+  for (const auto &e : dna_model_name_with_freq) {
+    const auto &search_str = e.first;
+    const auto &replacement = e.second;
+
+    if (search_str == model_name.substr(0, search_str.size())) {
+      return replacement + model_name.substr(search_str.size());
+    }
+  }
+
+  return model_name;
+}
+
 /**
  * Description of a model that is to be tested.
  * It only describes the model matrix, frequency modifier and rate heterogeneity type, unlike the Model class, which
@@ -176,8 +206,10 @@ public:
 
   std::string descriptor() const
   {
-    return substitution_model.matrix_name + frequency_type_label(datatype, substitution_model.base_frequency) +
+    const auto name = substitution_model.matrix_name + frequency_type_label(datatype, substitution_model.base_frequency) +
            rate_heterogeneity.label();
+
+    return (datatype == DataType::dna) ? normalize_dna_model_name(name) : name;
   }
 
   bool operator==(const ModelDescriptor &other) const
@@ -261,22 +293,6 @@ const array<string, N_DNA_ALLMATRIX_COUNT> dna_model_matrices{
     "012345" // 202
 };
 
-const std::array<std::pair<string, string>, 3> dna_model_name_with_freq{
-    {{"F81+FE", "JC"}, {"HKY+FE", "K80"}, {"GTR+FE", "SYM"}}};
-
-inline std::string normalize_model_name(const std::string &model_name)
-{
-  for (const auto &e : dna_model_name_with_freq) {
-    const auto &search_str = e.first;
-    const auto &replacement = e.second;
-
-    if (search_str == model_name.substr(0, search_str.size())) {
-      return replacement + model_name.substr(search_str.size());
-    }
-  }
-
-  return model_name;
-}
 
 const std::vector<std::string> aa_substitution_matrix_names{
     "LG",        //  1
