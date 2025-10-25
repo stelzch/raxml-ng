@@ -202,8 +202,10 @@ unsigned int ModelScheduler::recommended_thread_count() const
 }
 
 void ModelScheduler::update_result(ModelEvaluator &evaluator, ModelEvaluation result, bool announce, bool write_checkpoint) {
-    std::lock_guard<std::mutex> lock(mutex_evaluation);
-    _update_result(evaluator, std::move(result), announce, write_checkpoint);
+    {
+        std::lock_guard<std::mutex> lock(mutex_evaluation);
+        _update_result(evaluator, std::move(result), announce, write_checkpoint);
+    }
 
     // Only show progress for new results
     if (write_checkpoint)
