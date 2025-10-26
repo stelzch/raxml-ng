@@ -271,6 +271,15 @@ ModelEvaluator *ModelScheduler::get_next_model()
 
     std::lock_guard<std::mutex> lock(mutex_evaluation);
 
+    /* Recheck heuristics on every thread joining */
+    if (evaluation_index < evaluators.size())
+    {
+        auto &evaluator = evaluators.at(evaluation_index);
+        if (heuristics.can_skip(evaluator.partition_index(), evaluator.candidate_model())) {
+            evaluator.skip();
+        }
+    }
+
     while (evaluation_index < evaluators.size() &&
            evaluators.at(evaluation_index).get_status() != EvaluationStatus::WAITING)
     {
