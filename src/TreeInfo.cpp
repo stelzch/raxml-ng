@@ -3,6 +3,7 @@
 #include "TreeInfo.hpp"
 #include "ParallelContext.hpp"
 #include "corax/tree/treeinfo.h"
+#include "types.hpp"
 
 const intVector PARAM_OPT_ORDER_DEFAULT = {CORAX_OPT_PARAM_SUBST_RATES, CORAX_OPT_PARAM_FREQUENCIES,
                                            CORAX_OPT_PARAM_ALPHA, CORAX_OPT_PARAM_PINV,
@@ -467,13 +468,15 @@ double TreeInfo::optimize_params(int params_to_optimize, double lh_epsilon)
           switch (_freerate_opt)
           {
             case FreerateOptMethod::EM:
+            case FreerateOptMethod::EM_BRENT:
               new_loglh = -1 * corax_algo_opt_rates_weights_em_treeinfo(_pll_treeinfo,
                                                                         RAXML_FREERATE_MIN,
                                                                         RAXML_FREERATE_MAX,
                                                                         _brlen_min,
                                                                         _brlen_max,
                                                                         RAXML_BFGS_FACTOR,
-                                                                        _param_epsilon);
+                                                                        _param_epsilon,
+                                                                        _freerate_opt == FreerateOptMethod::EM_BRENT);
               break;
             case FreerateOptMethod::LBFGSB:
             case FreerateOptMethod::AUTO:

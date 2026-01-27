@@ -166,7 +166,8 @@ enum class FreerateOptMethod
 {
   AUTO = 0,
   EM,
-  LBFGSB
+  LBFGSB,
+  EM_BRENT
 };
 
 enum class AbnormalSequenceAction

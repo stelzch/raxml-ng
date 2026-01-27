@@ -1524,6 +1524,8 @@ void CommandLineParser::parse_options(int argc, char** argv, Options &opts)
           opts.free_rate_opt_method = FreerateOptMethod::EM;
         } else if (strcasecmp(optarg, "lbfgsb") == 0 || strcasecmp(optarg, "bfgs") == 0) {
           opts.free_rate_opt_method = FreerateOptMethod::LBFGSB;
+        } else if (strcasecmp(optarg, "em-brent") == 0) {
+          opts.free_rate_opt_method = FreerateOptMethod::EM_BRENT;
         } else if (strcasecmp(optarg, "auto") == 0) {
           opts.free_rate_opt_method = FreerateOptMethod::AUTO;
         } else
