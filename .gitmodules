@@ -4,4 +4,4 @@
 [submodule "libs/coraxlib"]
 	path = libs/coraxlib
 	url = ../coraxlib.git
-	branch = hotfix/2026-01-modeltest-em-fix
+	branch = hotfix/dev
