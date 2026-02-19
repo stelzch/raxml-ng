@@ -2,6 +2,7 @@
 #include "json.hpp"
 
 #include "../autotune/ResourceEstimator.hpp"
+#include "../ICScoreCalculator.hpp"
 
 
 #include <nlohmann/json.hpp>
@@ -148,17 +149,141 @@ json rfdist_json(const RFDistCalculator *dist_calculator) {
     };
 }
 
-json evaluate_json(const CheckpointFile &checkp) {
-    json a = json::array();
+json evaluate_json(const Options &opts, const PartitionedMSA *msa, const CheckpointFile &checkp) {
+  json ml_trees = json::array();
+  for (const auto &tree : checkp.ml_trees) {
+    const double lnL = tree.second.first;
+    ml_trees.push_back({
+      {"lnL", format_loglh(lnL)},
+    });
+  }
 
-    for (const auto &tree : checkp.ml_trees) {
-      const double lnL = tree.second.first;
-      a.push_back({
-        {"lnL", format_loglh(lnL)},
-      });
+
+  json best_fit_model = json::array();
+  for (const auto &entry :  checkp.best_tree().models) {
+    const auto &part = msa->part_info(entry.first);
+    const auto &model = entry.second;
+    best_fit_model.push_back({
+      {"partition_name", part.name()},
+      {"sites", part.range_string()},
+      {"model", model.to_string()},
+      {"model_params", model.to_string(true, logger().precision(LogElement::model))}
+    });
+  }
+
+  const double best_lnL = checkp.best_tree().loglh;
+
+  ICScoreCalculator ic_calc(msa->total_free_params(opts.brlen_linkage), msa->total_sites());
+  auto ic_scores = ic_calc.all(best_lnL);
+
+  return {
+    {"best", {
+      {"lnL", format_loglh(best_lnL)},
+      {"best_fit", best_fit_model},
+      {"aic", format_loglh(ic_scores[InformationCriterion::aic])},
+      {"aicc", format_loglh(ic_scores[InformationCriterion::aicc])},
+      {"bic", format_loglh(ic_scores[InformationCriterion::bic])},
+    }},
+    {"ml_trees", ml_trees},
+  };
+}
+
+
+NLOHMANN_JSON_SERIALIZE_ENUM(TopologyOptMethod, {
+  {TopologyOptMethod::none, "none"},
+  {TopologyOptMethod::classic, "classic"},
+  {TopologyOptMethod::adaptive, "adaptive"},
+  {TopologyOptMethod::rapidBS, "rapidBS"},
+  {TopologyOptMethod::nniRound, "nniRound"},
+  {TopologyOptMethod::simplified, "simplified"},
+  {TopologyOptMethod::adafast, "adafast"}
+});
+
+NLOHMANN_JSON_SERIALIZE_ENUM(FreerateOptMethod, {
+  {FreerateOptMethod::AUTO, "auto"},
+  {FreerateOptMethod::EM_BFGS, "em-bfgs"},
+  {FreerateOptMethod::EM_BRENT, "em-brent"},
+  {FreerateOptMethod::LBFGSB, "bfgs-bfgs"}
+});
+
+NLOHMANN_JSON_SERIALIZE_ENUM(StoppingRule, {
+  {StoppingRule::none, "none"},
+  {StoppingRule::sn_rell, "sn_rell"},
+  {StoppingRule::sn_normal, "sn_normal"},
+  {StoppingRule::kh, "kh"},
+  {StoppingRule::kh_mult, "kh_mult"},
+});
+
+NLOHMANN_JSON_SERIALIZE_ENUM(BranchSupportMetric, {
+  {BranchSupportMetric::fbp, "fbp"},
+  {BranchSupportMetric::tbe, "tbe"},
+  {BranchSupportMetric::rbs, "rbs"},
+  {BranchSupportMetric::sh_alrt, "sh_alrt"},
+  {BranchSupportMetric::ebg, "ebg"},
+  {BranchSupportMetric::ps, "ps"},
+  {BranchSupportMetric::pbs, "pbs"},
+  {BranchSupportMetric::ic1, "ic1"},
+  {BranchSupportMetric::ica, "ica"},
+  {BranchSupportMetric::gcf, "gcf"},
+});
+
+NLOHMANN_JSON_SERIALIZE_ENUM(StartingTree, {
+  {StartingTree::random, "random"},
+  {StartingTree::parsimony, "parsimony"},
+  {StartingTree::user, "user"},
+  {StartingTree::adaptive, "adaptive"},
+  {StartingTree::consensus, "consensus"}
+});
+
+json options_json(const Options &opts) {
+  json j {
+      {"opt_freerate", opts.free_rate_opt_method_short_name()},
+      {"opt_pattern_compression", opts.use_pattern_compression},
+      {"opt_rate_scalers", opts.use_rate_scalers},
+      {"opt_simd", opts.simd_arch_name()},
+      {"opt_site_repeats", opts.use_repeats},
+      {"opt_tip_inner", opts.use_tip_inner},
+      {"num_threads", opts.num_threads},
+      {"num_workers", opts.num_workers},
+      {"random_seed", opts.random_seed},
+  };
+  j["command"] = CommandNames[static_cast<unsigned int>(opts.command)];
+
+  if ((opts.command == Command::search || opts.command == Command::bootstrap ||
+      opts.command == Command::all) &&
+      opts.topology_opt_method != TopologyOptMethod::none) {
+    j["topology_opt_method"] = opts.topology_opt_method;
+  }
+
+  if (opts.command == Command::bootstrap || opts.command == Command::all ||
+      opts.command == Command::support)
+  {
+    j["branch_support_metric"] = json::array();
+    for (const auto &metric : opts.bs_metrics) {
+      j["branch_support_metric"].push_back(metric);
+    }
+  }
+
+  auto start_trees = json::array();
+  for (const auto &t : opts.start_trees) {
+    const auto &type = t.first;
+    const auto &count = t.second;
+    start_trees.push_back({ {"type", type} });
+
+    if (type == StartingTree::random) {
+      start_trees.back()["count"] = count;
     }
 
-    return a;
+    if (type == StartingTree::parsimony) {
+      start_trees.back()["count"] = count;
+      start_trees.back()["parsimony_spr"] = opts.use_pars_spr;
+      start_trees.back()["parsimony-brlen"] = opts.use_pars_brlen;
+    }
+
+  }
+  j["starting_trees"] = start_trees;
+
+  return j;
 }
 
 void print_json(const Options& opts, const PartitionedMSA *msa, const CheckpointFile& checkp, const ModelTest *modeltest, const DifficultyPredictor *difficulty_predictor, const RFDistCalculator *dist_calculator, double used_wh) {
@@ -174,15 +299,6 @@ void print_json(const Options& opts, const PartitionedMSA *msa, const Checkpoint
       {"elapsed_time_total", checkp.elapsed_seconds + global_timer().elapsed_seconds()},
       {"invocation", opts.cmdline},
       {"invocation_time", sysutil_fmt_time(global_timer().start_time())},
-      {"num_threads", opts.num_threads},
-      {"num_workers", opts.num_workers},
-      {"opt_freerate", opts.free_rate_opt_method_short_name()},
-      {"opt_pattern_compression", opts.use_pattern_compression},
-      {"opt_rate_scalers", opts.use_rate_scalers},
-      {"opt_simd", opts.simd_arch_name()},
-      {"opt_site_repeats", opts.use_repeats},
-      {"opt_tip_inner", opts.use_tip_inner},
-      {"random_seed", opts.random_seed},
       {"release_date", RAXML_DATE},
       {"release", RAXML_VERSION},
       {"system_cpu_cores", sysutil_get_cpu_cores()},
@@ -194,6 +310,8 @@ void print_json(const Options& opts, const PartitionedMSA *msa, const Checkpoint
   if (used_wh > 0) {
     j["metadata"]["used_wh"] = used_wh;
   }
+
+  j["options"] = options_json(opts);
 
   if(msa != nullptr) {
     j["alignment"] = {
@@ -214,7 +332,11 @@ void print_json(const Options& opts, const PartitionedMSA *msa, const Checkpoint
 
   if (opts.command == Command::evaluate || opts.command == Command::sitelh ||
       opts.command == Command::ancestral || opts.command == Command::mutmap) {
-    j["evaluate"] = evaluate_json(checkp);
+    j["evaluate"] = evaluate_json(opts, msa, checkp);
+  }
+
+  if (opts.command == Command::search || opts.command == Command::all) {
+    j["search"] = evaluate_json(opts, msa, checkp);
   }
 
   if (opts.command == Command::parse) {

@@ -287,6 +287,22 @@ size_t PartitionedMSA::total_free_model_params() const
   return sum;
 }
 
+size_t PartitionedMSA::total_free_params(int brlen_linkage) const
+{
+  size_t free_params = total_free_model_params();
+  size_t num_parts = part_count();
+  auto num_branches = taxon_count() + taxon_count() - 3;
+
+  if (brlen_linkage == CORAX_BRLEN_LINKED)
+    free_params += num_branches;
+  else if (brlen_linkage == CORAX_BRLEN_SCALED)
+    free_params += num_branches + num_parts - 1;
+  else if (brlen_linkage == CORAX_BRLEN_UNLINKED)
+    free_params += num_branches * num_parts;
+
+  return free_params;
+}
+
 size_t PartitionedMSA::taxon_clv_size() const
 {
   size_t clv_size = 0;

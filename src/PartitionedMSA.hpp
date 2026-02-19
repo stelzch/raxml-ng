@@ -40,6 +40,9 @@ public:
 
   size_t total_free_model_params() const;
 
+  /** total number of free parameters, including branch lengths */
+  size_t total_free_params(int brlen_linkage) const;
+
   /* given in elements (NOT in bytes) */
   size_t taxon_clv_size() const;
 

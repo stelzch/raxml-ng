@@ -697,25 +697,6 @@ bool check_msa(RaxmlInstance& instance)
   return msa_valid;
 }
 
-size_t total_free_params(const RaxmlInstance& instance)
-{
-  const auto& parted_msa = *instance.parted_msa;
-  size_t free_params = parted_msa.total_free_model_params();
-  size_t num_parts = parted_msa.part_count();
-  auto tree = BasicTree(parted_msa.taxon_count());
-  auto num_branches = tree.num_branches();
-  auto brlen_linkage = instance.opts.brlen_linkage;
-
-  if (brlen_linkage == CORAX_BRLEN_LINKED)
-    free_params += num_branches;
-  else if (brlen_linkage == CORAX_BRLEN_SCALED)
-    free_params += num_branches + num_parts - 1;
-  else if (brlen_linkage == CORAX_BRLEN_UNLINKED)
-    free_params += num_branches * num_parts;
-
-  return free_params;
-}
-
 void check_models(const RaxmlInstance& instance)
 {
   const auto& opts = instance.opts;
@@ -827,7 +808,7 @@ void check_models(const RaxmlInstance& instance)
     if (instance.parted_msa->part_count() > 1)
     {
       size_t model_free_params = instance.parted_msa->total_free_model_params();
-      size_t free_params = total_free_params(instance);
+      size_t free_params = instance.parted_msa->total_free_params(instance.opts.brlen_linkage);
       size_t sample_size = instance.parted_msa->total_sites();
       string errmsg = "Number of free parameters (K=" + to_string(free_params) +
           ") is larger than alignment size (n=" + to_string(sample_size) + ").\n" +
@@ -2904,7 +2885,7 @@ void print_ic_scores(const RaxmlInstance& instance, double loglh)
 {
   const auto& parted_msa = *instance.parted_msa;
 
-  size_t free_params = total_free_params(instance);
+  size_t free_params = instance.parted_msa->total_free_params(instance.opts.brlen_linkage);
   size_t sample_size = parted_msa.total_sites();
 
   ICScoreCalculator ic_calc(free_params, sample_size);
