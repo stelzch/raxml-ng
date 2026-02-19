@@ -4117,7 +4117,19 @@ int internal_main(int argc, char** argv, void* comm)
 
     opts.num_ranks = ParallelContext::num_ranks();
 
+    #ifdef _RAXML_JSON
+    for (auto i = 0; i < argc; ++i) {
+        if (strcmp(argv[i], "--json") == 0) {
+            RAXML_JSON_STDOUT = true;
+        }
+    }
+    if (!RAXML_JSON_STDOUT) {
+      logger().add_log_stream(&cout);
+    }
+    #else
     logger().add_log_stream(&cout);
+    #endif
+
 
     CommandLineParser cmdline;
     try
@@ -4126,9 +4138,14 @@ int internal_main(int argc, char** argv, void* comm)
     }
     catch (OptionException &e)
     {
+      #ifdef _RAXML_JSON
+          print_error_json(&opts, "invalid_argument", e.message());
+      #endif
       LOG_INFO << "ERROR: " << e.message() << std::endl;
       return clean_exit(EXIT_FAILURE);
     }
+
+
 
     /* handle trivial commands first */
     switch (opts.command)
@@ -4158,11 +4175,14 @@ int internal_main(int argc, char** argv, void* comm)
       case Command::modeltest:
         if (!opts.redo_mode && opts.result_files_exist())
         {
-          LOG_ERROR << endl << "ERROR: Result files for the run with prefix `" <<
-                              (opts.outfile_prefix.empty() ? opts.msa_file : opts.outfile_prefix) <<
+          auto prefix = (opts.outfile_prefix.empty() ? opts.msa_file : opts.outfile_prefix);
+          LOG_ERROR << endl << "ERROR: Result files for the run with prefix `" << prefix <<
                               "` already exist!\n" <<
                               "Please either choose a new prefix, remove old files, or add "
                               "--redo command line switch to overwrite them." << endl << endl;
+          #ifdef _RAXML_JSON
+            print_error_json(&opts, "result_already_exists", "Result files for the prefix already exist", {{"prefix", prefix}});
+          #endif
           return clean_exit(EXIT_FAILURE);
         }
         break;
@@ -4352,7 +4372,7 @@ int internal_main(int argc, char** argv, void* comm)
       finalize_energy(instance, cm.checkp_file());
       if (ParallelContext::master_rank()) {
         #ifdef _RAXML_JSON
-          print_json(instance.opts, instance.parted_msa.get(), cm.checkp_file(), instance.model_test.get(), instance.used_wh);
+          print_json(instance.opts, instance.parted_msa.get(), cm.checkp_file(), instance.model_test.get(), instance.msa_diff_predictor.get(), instance.dist_calculator.get(), instance.used_wh);
         #endif
 
         print_final_output(instance, cm.checkp_file());
@@ -4367,6 +4387,9 @@ int internal_main(int argc, char** argv, void* comm)
     }
     catch(exception& e)
     {
+      #ifdef _RAXML_JSON
+        print_error_json(&opts, "fatal_error", e.what());
+      #endif
       LOG_ERROR << endl << "ERROR: " << e.what() << endl << endl;
       retval = EXIT_FAILURE;
     }

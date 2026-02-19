@@ -13,6 +13,10 @@
 #include <thread>
 #endif
 
+#ifdef _RAXML_JSON
+#include "io/json.hpp"
+#endif
+
 #include <regex>
 
 using namespace std;
@@ -109,6 +113,7 @@ static struct option long_options[] =
   {"moose",              optional_argument, 0, 0 },  /*  76 */
   {"moose-options",      required_argument, 0, 0 },  /*  77 */
   {"mutmap",             optional_argument, 0, 0 },  /*  78 */
+  {"json",               no_argument,       0, 0 },  /*  79 */
 
   { 0, 0, 0, 0 }
 };
@@ -1585,13 +1590,20 @@ void CommandLineParser::parse_options(int argc, char** argv, Options &opts)
         opts.use_tip_inner = true;
         num_commands++;
         break;
+      case 79: /* json */
+        // No need to handle, internal_main already took care of it
+        break;
       default:
         throw  OptionException("Internal error in option parsing");
     }
   }
 
-  if (c != -1)
+  if (c != -1) {
+    #ifdef _RAXML_JSON
+      print_error_json(&opts, "invalid_argument", "Received unknown command-line option");
+    #endif
     exit(EXIT_FAILURE);
+  }
 
   /* if more than one independent command, fail */
   if (num_commands > 1)
@@ -1724,6 +1736,7 @@ void CommandLineParser::print_help()
                                                       << "vector instruction set to use (default: auto-detect).\n"
             "  --rate-scalers on | off                    use individual CLV scalers for each rate category (default: ON for >2000 taxa)\n"
             "  --force        [ <CHECKS> ]                disable safety checks (please think twice!)\n"
+            "  --json                                     write JSON to stdout \n"
             "\n"
             "Model options:\n"
             "  --model        <name>+G[n]+<Freqs> | FILE  model specification OR partition file\n"

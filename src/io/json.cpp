@@ -1,9 +1,16 @@
 #ifdef _RAXML_JSON
 #include "json.hpp"
 
+#include "../autotune/ResourceEstimator.hpp"
+
 
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
+
+
+const char *JSON_SCHEMA = "https://raxml.ng/schema/raxml-ng-schema-v1.json";
+const char *JSON_FORMAT_VERSION = "1";
+bool RAXML_JSON_STDOUT = false;
 
 string format_loglh(const double v) {
     std::ostringstream out;
@@ -99,15 +106,69 @@ json moose_json(const Options &options, const ModelTest *modeltest, const Partit
 
 }
 
+json parse_command_json(const Options &opts, const PartitionedMSA &parted_msa) {
+  StaticResourceEstimator resEstimator(parted_msa, opts);
+  const auto res = resEstimator.estimate();
 
-void print_json(const Options& opts, const PartitionedMSA *msa, const CheckpointFile& checkp, const ModelTest *modeltest, double used_wh) {
+  return {
+    {"taxon_clv_size", res.taxon_clv_size},
+    {"memory_estimate_bytes", res.total_mem_size},
+    {"threads_balanced", res.num_threads_balanced},
+    {"threads_throughput", res.num_threads_throughput},
+    {"threads_response", res.num_threads_response},
+  };
+}
+
+json pythia_json(const DifficultyPredictor *difficulty_predictor) {
+    return {
+        {"difficulty", difficulty_predictor->difficulty()},
+        {"features", {
+            {"avg_rf_dist", difficulty_predictor->avg_rrf()},
+            {"prop_unique_topologies", difficulty_predictor->prop_uniq()},
+            {"taxa", difficulty_predictor->features()->taxa},
+            {"sites", difficulty_predictor->features()->sites},
+            {"patterns_per_site", difficulty_predictor->features()->patterns_per_site},
+            {"patterns_per_taxa", difficulty_predictor->features()->patterns_per_taxa},
+            {"sites_per_taxa", difficulty_predictor->features()->sites_per_taxa},
+            {"proportion_gaps", difficulty_predictor->features()->proportion_gaps},
+            {"proportion_invariant", difficulty_predictor->features()->proportion_invariant},
+            {"entropy", difficulty_predictor->features()->entropy},
+            {"pattern_entropy", difficulty_predictor->features()->pattern_entropy},
+            {"bollback_multinomial", difficulty_predictor->features()->bollback_multinomial},
+        }},
+    };
+}
+
+json rfdist_json(const RFDistCalculator *dist_calculator) {
+    return {
+        {"average_absolute_rfdist", dist_calculator->avg_rf()},
+        {"average_relative_rfdist", dist_calculator->avg_rrf()},
+        {"num_topologies", dist_calculator->num_trees()},
+        {"num_unique_topologies", dist_calculator->num_uniq_trees()},
+    };
+}
+
+json evaluate_json(const CheckpointFile &checkp) {
+    json a = json::array();
+
+    for (const auto &tree : checkp.ml_trees) {
+      const double lnL = tree.second.first;
+      a.push_back({
+        {"lnL", format_loglh(lnL)},
+      });
+    }
+
+    return a;
+}
+
+void print_json(const Options& opts, const PartitionedMSA *msa, const CheckpointFile& checkp, const ModelTest *modeltest, const DifficultyPredictor *difficulty_predictor, const RFDistCalculator *dist_calculator, double used_wh) {
   if (opts.json_file().empty()) {
     return;
   }
 
   json j = {
-    {"$schema",  "https://raxml.ng/schema/raxml-ng-schema-v1.json"},
-    {"$version", "1"},
+    {"$schema", JSON_SCHEMA},
+    {"$version", JSON_FORMAT_VERSION},
     {"metadata", {
       {"elapsed_time", global_timer().elapsed_seconds()},
       {"elapsed_time_total", checkp.elapsed_seconds + global_timer().elapsed_seconds()},
@@ -151,17 +212,52 @@ void print_json(const Options& opts, const PartitionedMSA *msa, const Checkpoint
     j["moose"] = moose_json(opts, modeltest, msa);
   }
 
-  if (opts.command == Command::evaluate) {
-    for (const auto &tree : checkp.ml_trees) {
-      const double lnL = tree.second.first;
-      j["evaluate"].push_back({
-        {"lnL", format_loglh(lnL)},
-      });
-    }
+  if (opts.command == Command::evaluate || opts.command == Command::sitelh ||
+      opts.command == Command::ancestral || opts.command == Command::mutmap) {
+    j["evaluate"] = evaluate_json(checkp);
+  }
+
+  if (opts.command == Command::parse) {
+    j["parse"] = parse_command_json(opts, *msa);
+  }
+
+  if (difficulty_predictor != nullptr) {
+    j["pythia"] = pythia_json(difficulty_predictor);
+  }
+  
+  if (dist_calculator != nullptr) {
+    j["rfdist"] = rfdist_json(dist_calculator);
   }
 
   std::ofstream of(opts.json_file());
   of << j << "\n";
+
+  if (RAXML_JSON_STDOUT) {
+    std::cout << j << "\n";
+  }
+}
+
+void print_error_json(const Options *opts, const std::string error_type, const std::string error_message, std::map<std::string, std::string> additional_info) {
+  json j = {
+    {"$schema", JSON_SCHEMA},
+    {"$version", JSON_FORMAT_VERSION},
+    {"error", {
+      {"message", error_message},
+      {"type", error_type},
+    }}};
+
+  if (!additional_info.empty()) {
+    j["error"]["props"] = json(additional_info);
+  }
+
+  if (opts != nullptr && !opts->json_file().empty()) {
+    std::ofstream of(opts->json_file());
+    of << j << "\n";
+  }
+
+  if (RAXML_JSON_STDOUT) {
+    std::cout << j << "\n";
+  }
 }
 
 #endif

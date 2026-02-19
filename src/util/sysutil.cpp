@@ -20,6 +20,10 @@
 
 #include "../common.h"
 
+#ifdef _RAXML_JSON
+#include "../io/json.hpp"
+#endif
+
 using namespace std;
 
 SystemTimer systimer;
@@ -31,6 +35,21 @@ void sysutil_fatal(const char * format, ...)
   vfprintf(stderr, format, argptr);
   va_end(argptr);
   fprintf(stderr, "\n");
+
+  #ifdef _RAXML_JSON
+  constexpr unsigned int MAX_ERROR_MSG_LENGTH = 200;
+  char *error_message = (char *) malloc(MAX_ERROR_MSG_LENGTH);
+  if (error_message != nullptr) {
+    va_list argptr;
+    va_start(argptr, format);
+    vsnprintf(error_message, MAX_ERROR_MSG_LENGTH, format, argptr);
+    va_end(argptr);
+    print_error_json(nullptr, "fatal_error", error_message);
+    free(error_message);
+  }
+  #endif
+
+
   exit(EXIT_FAILURE);
 }
 
