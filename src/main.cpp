@@ -176,6 +176,8 @@ struct RaxmlWorker
   size_t total_num_searches() const { return start_trees.size() + bs_trees.size(); }
 };
 
+void thread_infer_model(RaxmlInstance& instance, CheckpointManager& cm);
+
 void print_banner()
 {
   LOG_INFO << endl << "RAxML-NG v. " << RAXML_VERSION << " released on " << RAXML_DATE <<
@@ -227,6 +229,9 @@ void init_part_info(RaxmlInstance& instance)
       (opts.msa_format == FileFormat::autodetect && RBAStream::rba_file(opts.msa_file)))
   {
     opts.msa_format = FileFormat::binary;
+
+    if (opts.command == Command::sitelh &&  RBAStream::rba_version(opts.msa_file) < 5)
+      throw runtime_error("RBA file version too old and can't be used with --sitelh command.");
 
     if (!opts.model_file.empty() && !opts.auto_model())
     {
@@ -1163,7 +1168,7 @@ void autotune_threads(RaxmlInstance& instance)
   assert(opts.num_threads % workers_per_rank == 0);
 
   auto threads_per_worker = opts.num_threads * num_ranks / opts.num_workers;
-  LOG_INFO << "\nParallelization scheme for tree search (auto): " << opts.num_workers << " worker(s) x "
+  LOG_VERB << "\nParallelization autoconfig: " << opts.num_workers << " worker(s) x "
            << threads_per_worker << " thread(s)" << endl << endl;
 }
 
@@ -1827,14 +1832,17 @@ void build_trees_parallel(RaxmlInstance& instance, TreeList& tree_list, Starting
     num_threads = instance.num_threads_parsimony;
   assert(num_threads > 0);
 
+  /* no fine-grained parsimony parallelization: #threads <= #trees */
+  num_threads = std::min(num_threads, (unsigned int) tree_count);
+
   if (num_threads > 1 && tree_type == StartingTree::parsimony)
   {
     auto mem_per_thread = instance.parted_msa_parsimony->memsize_estimate();
     LOG_VERB << "Estimated memory per parsimony thread: " <<  mem_per_thread/1024/1024 << " MB" << endl;
     unsigned int num_threads_max = 0.7 * sysutil_get_memtotal() / mem_per_thread;
     num_threads = std::min(num_threads, num_threads_max);
+    LOG_INFO_TS << "Parallel parsimony: " << tree_count <<  " trees with " << num_threads << " threads" << endl;
   }
-  LOG_INFO_TS << "Parallel parsimony: " << tree_count <<  " trees with " << num_threads << " threads" << endl;
   ParallelContext::init_pthreads_custom(opts, thread_fn, num_threads, num_threads);
   thread_fn();
   ParallelContext::finalize_threads();
@@ -2302,7 +2310,7 @@ void init_stop_criterion(RaxmlInstance& instance)
   }
 }
 
-void init_modeltest(RaxmlInstance& instance, CheckpointManager &cm)
+void autoselect_models(RaxmlInstance& instance, CheckpointManager &cm)
 {
   const auto& opts = instance.opts;
   if (!opts.auto_model())
@@ -2338,7 +2346,21 @@ void init_modeltest(RaxmlInstance& instance, CheckpointManager &cm)
   assert(instance.num_threads_modeltest > 0);
 
   LOG_INFO << "\nStarting model selection with " << tree_type << " starting tree using "
+#ifdef _RAXML_MPI
+           << ParallelContext::num_ranks() << " ranks x "
+#endif
            << instance.num_threads_modeltest << " threads" << endl << endl;
+
+  auto modeltest_thread_main = std::bind(thread_infer_model, std::ref(instance), std::ref(cm));
+  ParallelContext::init_pthreads_custom(instance.opts, modeltest_thread_main,
+                                        instance.num_threads_modeltest, instance.num_threads_modeltest);
+  modeltest_thread_main();
+  ParallelContext::finalize_threads();
+
+  LOG_INFO << "Model selection time: " << FMT_PREC3(global_timer().elapsed_seconds()) << " seconds\n\n";
+
+  /* save updated RBA with best-fit model */
+  write_binary_msa_file(instance, true);
 }
 
 unsigned int read_newick_trees_custom(SplitsTree& ref_tree, const std::string& fname,
@@ -3809,12 +3831,13 @@ void thread_infer_model(RaxmlInstance& instance, CheckpointManager& cm)
   ParallelContext::global_barrier();
   const auto optimal_models = instance.model_test->optimize_model();
 
-  if (ParallelContext::master())
+  if (ParallelContext::master_thread())
   {
     /* in standalone mode, print model testing results to files */
-    if (instance.opts.command == Command::modeltest)
+    if (instance.opts.command == Command::modeltest && ParallelContext::master())
       instance.model_test->print_results_to_file();
 
+    /* apply best-fit model(s) to the partitioned MSA */
     for (unsigned p = 0; p < optimal_models.size(); ++p)
     {
       if (instance.opts.command == Command::modeltest)
@@ -3976,20 +3999,16 @@ void master_main(RaxmlInstance& instance, CheckpointManager& cm)
   if (ParallelContext::master_rank())
     instance.opts.remove_result_files();
 
-  /* initalize and perform modeltesting */
-  init_modeltest(instance, cm);
+  /* initialize and perform modeltesting */
+  autoselect_models(instance, cm);
 
-  if (instance.opts.auto_model())
-  {
-    auto modeltest_thread_main = std::bind(thread_infer_model, std::ref(instance), std::ref(cm));
-    ParallelContext::init_pthreads_custom(instance.opts, modeltest_thread_main,
-                                          instance.num_threads_modeltest, instance.num_threads_modeltest);
-    modeltest_thread_main();
-    ParallelContext::finalize_threads();
+  /* in stand-along model selection mode, we are already done */
+  if (opts.command == Command::modeltest)
+    return;
 
-    /* save updated RBA with best-fit model */
-    write_binary_msa_file(instance, true);
-  }
+  auto threads_per_worker = opts.num_threads * opts.num_ranks / opts.num_workers;
+  LOG_INFO << "Parallelization scheme: " << opts.num_workers << " worker(s) x "
+           << threads_per_worker << " thread(s)" << endl << endl;
 
   ParallelContext::init_pthreads(opts, std::bind(thread_main,
                                                 std::ref(instance),
