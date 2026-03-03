@@ -128,6 +128,9 @@ public:
 
   void custom_reduce(void *parallel_context, void (*parallel_reduce_cb)(void *, double *, size_t, int));
 
+
+  void set_brlen_opt_method(int brlen_opt_method);
+
 private:
   corax_treeinfo_t *_pll_treeinfo;
   IDSet _parts_master;

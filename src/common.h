@@ -20,7 +20,6 @@
 
 /* system utils */
 void sysutil_fatal(const char * format, ...);
-void sysutil_fatal_libpll();
 void libpll_check_error(const std::string& errmsg = "ERROR in coraxlib", bool force = false);
 void libpll_reset_error();
 

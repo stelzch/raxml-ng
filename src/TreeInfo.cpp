@@ -868,3 +868,8 @@ void TreeInfo::custom_reduce(void *parallel_context, void (*parallel_reduce_cb)(
 {
   corax_treeinfo_set_parallel_context(_pll_treeinfo, parallel_context, parallel_reduce_cb);
 }
+
+void TreeInfo::set_brlen_opt_method(int brlen_opt_method)
+{
+  _brlen_opt_method = brlen_opt_method;
+}

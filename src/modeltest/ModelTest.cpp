@@ -198,7 +198,26 @@ const vector<Model>& ModelTest::optimize_model()
     TreeInfo treeinfo(options, tree, msa, tip_msa_idmap, assignment, evaluator->partition_index(), model);
 
     treeinfo.custom_reduce(evaluator, ModelEvaluator::reduce);
-    optimizer.optimize_model(treeinfo);
+    try {
+        optimizer.optimize_model(treeinfo);
+    } catch (CoraxException &e) {
+        if (e.corax_error_code() == CORAX_OPT_ERROR_NEWTON_WORSE_LK) {
+            // If Newton-Raphson failed to optimize branches, switch to safe mode and continue optimization
+            if (evaluator->thread_id() == 0) {
+                logger().logstream(LogLevel::debug, LogScope::thread) << RAXML_LOG_TIMESTAMP
+                        << "Continuing optimization of candidate model "
+                        << model_descriptor << " for partition " << evaluator->partition_index()
+                        << " with option CORAX_OPT_BLO_NEWTON_SAFE" << endl;
+            }
+            libpll_reset_error();
+            treeinfo.set_brlen_opt_method(CORAX_OPT_BLO_NEWTON_SAFE);
+            evaluator->barrier();
+            optimizer.optimize_model(treeinfo);
+        } else {
+            throw;
+        }
+
+    }
     evaluator->barrier();
 
     if (evaluator->thread_id() == 0)

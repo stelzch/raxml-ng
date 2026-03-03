@@ -280,5 +280,32 @@ protected:
   }
 };
 
+class CoraxException : public RaxmlException
+{
+public:
+  CoraxException(std::string user_message, int corax_error_code, const char *corax_error_message)
+  : RaxmlException(""), _user_message(std::move(user_message)),
+    _corax_error_code(corax_error_code), _corax_error_message(corax_error_message)
+  {
+  }
+
+  void update_message() const override
+  {
+    _message = format_message("%s (CORAX-%i): %s",
+                              _user_message.c_str(),
+                              _corax_error_code,
+                              corax_errmsg);
+  }
+
+  int corax_error_code() const noexcept
+  {
+    return _corax_error_code;
+  }
+protected:
+  std::string _user_message;
+  int _corax_error_code;
+  const char *_corax_error_message;
+};
+
 
 #endif /* RAXML_TYPES_HPP_ */
