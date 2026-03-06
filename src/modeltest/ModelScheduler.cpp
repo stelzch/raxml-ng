@@ -41,7 +41,8 @@ vector<ModelEvaluator> build_evaluators(const PartitionedMSA &msa,
                                         const SubstitutionModelDescriptor &reference_model,
                                         const ResourceEstimatorFunction& resource_estimator,
                                         const std::vector<ModelDescriptor> &candidate_models,
-                                        unsigned int partition_count)
+                                        unsigned int partition_count,
+                                        size_t *state_count)
 {
   vector<ModelEvaluator> evaluators;
   evaluators.reserve(candidate_models.size() * partition_count);
@@ -60,7 +61,7 @@ vector<ModelEvaluator> build_evaluators(const PartitionedMSA &msa,
       
       LOG_DEBUG << "Candidate model " << candidate_model.descriptor() << " requested " << requested_thread_count << " threads, assigning " << assigned_thread_count << "\n";
 
-      evaluators.emplace_back(candidate_model, pinfo.stats(), p, priority, assigned_thread_count);
+      evaluators.emplace_back(candidate_model, pinfo.stats(), p, priority, assigned_thread_count, state_count);
     }
   }
 
@@ -119,29 +120,27 @@ ModelScheduler::ModelScheduler(
    checkpoint_manager{checkpoint_manager},
    partition_count{msa.part_count()},
    branch_count{BasicTree(msa.taxon_count()).num_branches()},
+   evaluator_status_counts(),
    candidate_models{std::move(_candidate_models)},
    reference_model{candidate_models.at(0).substitution_model},
    evaluation_index{0},
    evaluators{build_evaluators(msa, options, reference_model, resource_estimator,
-                               candidate_models, partition_count)},
+                               candidate_models, partition_count, evaluator_status_counts.data())},
    heuristics{partition_count, options.modeltest_heuristics, get_selected_rhas(candidate_models, reference_model),
               reference_model, options.free_rate_min_categories, options.free_rate_max_categories,
               options.modeltest_significant_ic_delta, options.modeltest_rhas_heuristic_mode},
    distributed_scheduling{determine_binary_candidates_size(evaluators)},
-   candidate_model_descriptor_width(max_descriptor_width(candidate_models.cbegin(), candidate_models.cend()))
+   _eager_heuristic_evaluation_done(false),
+   candidate_model_descriptor_width(static_cast<int>(max_descriptor_width(candidate_models.cbegin(), candidate_models.cend())))
 {
   {
-    std::stable_sort(evaluators.begin(), evaluators.end(),
-                [](const ModelEvaluator &a, const ModelEvaluator &b) {
-                    // Sort by priority, high priority should come first
-                    return a.priority() > b.priority();
-                });
-    // Sort candidates with priority normal or lower (i.e. non-reference models) by proposed thread count
-    auto after_reference = std::find_if(evaluators.begin(), evaluators.end(),
-                                        [](const ModelEvaluator &a) {return a.priority() <= EvaluationPriority::NORMAL;});
-    std::stable_sort(after_reference, evaluators.end(), [](const ModelEvaluator &a, const ModelEvaluator &b) {
-            return a.proposed_thread_count() > b.proposed_thread_count();
-        });
+
+    std::stable_sort(evaluators.begin(), evaluators.end(), sort_by_descending_priority);
+
+    auto it_high = std::find_if(evaluators.begin(), evaluators.end(), priority_is_leq_high);
+    auto it_normal = std::find_if(evaluators.begin(), evaluators.end(), priority_is_leq_normal);
+    std::stable_sort(it_high, it_normal, sort_by_ascending_rate_cats);
+    std::stable_sort(it_normal, evaluators.end(), sort_by_descending_thread_count);
   }
 
   for (auto i = 0UL; i < evaluators.size(); ++i)
@@ -152,6 +151,7 @@ ModelScheduler::ModelScheduler(
 
   read_from_checkpoint(checkpoint_manager);
   globally_init_evaluation_index();
+  evaluator_status_counts[0] = evaluators.size();
 }
 
 void ModelScheduler::read_from_checkpoint(CheckpointManager &checkpoint_manager)
@@ -238,10 +238,9 @@ void ModelScheduler::update_result(ModelEvaluator &evaluator, const ModelEvaluat
   // Only show progress for new results
   if (write_checkpoint)
   {
-    const auto progress = _collect_progress();
-    const auto n_finished = progress.at(static_cast<uint64_t>(EvaluationStatus::FINISHED));
-    const auto n_total = evaluators.size() - progress.at(static_cast<uint64_t>(EvaluationStatus::SKIPPED));
-    const auto width = std::to_string(evaluators.size() + 1).size();
+    const auto n_finished = evaluator_status_counts[to_underlying(EvaluationStatus::FINISHED)];
+    const auto n_total = evaluators.size() - evaluator_status_counts[to_underlying(EvaluationStatus::SKIPPED)];
+    const int width = static_cast<int>(std::to_string(evaluators.size() + 1).size());
 
     logger().logstream(LogLevel::progress, LogScope::thread) << RAXML_LOG_TIMESTAMP << std::setfill(' ')
         << "[" << setw(3) << evaluator.proposed_thread_count() << "T] " << "Evaluated model "
@@ -345,21 +344,6 @@ vector<vector<ModelEvaluation const *>> ModelScheduler::collect_finished_results
   }
 
   return results;
-}
-
-ModelScheduler::EvaluationStatusCounts ModelScheduler::_collect_progress() const
-{
-    ModelScheduler::EvaluationStatusCounts counts;
-    counts.fill(0);
-
-    // TODO: this is currently O(N^2)
-    for (const auto &evaluator : evaluators)
-    {
-      const auto status = static_cast<uint64_t>(evaluator.get_status());
-      ++counts.at(status);
-    }
-
-    return counts;
 }
 
 ModelEvaluator *ModelScheduler::get_by_descriptor(const PartitionCandidateModel &candidate_model)

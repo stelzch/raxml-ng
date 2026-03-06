@@ -55,6 +55,9 @@ private:
 
     const size_t partition_count, branch_count;
 
+    using EvaluationStatusCounts = std::array<uint64_t, static_cast<uint64_t>(EvaluationStatus::FINISHED) + 1>;
+    EvaluationStatusCounts evaluator_status_counts;
+
     const std::vector<ModelDescriptor> candidate_models;
     const SubstitutionModelDescriptor &reference_model;
 
@@ -71,13 +74,14 @@ private:
     void _update_result(ModelEvaluator &evaluator, const ModelEvaluation &result, bool announce = true, bool write_checkpoint = true);
     ModelEvaluator &_get_evaluator(size_t index);
 
-    using EvaluationStatusCounts = std::array<uint64_t, static_cast<uint64_t>(EvaluationStatus::FINISHED) + 1>;
-    EvaluationStatusCounts _collect_progress() const;
     const std::string _ic_score_label() const;
     void read_from_checkpoint(CheckpointManager &checkpoint_manager);
     void globally_init_evaluation_index();
+    void _eager_heuristic_evaluation();
+    bool _eager_heuristic_evaluation_done;
 
-    unsigned int candidate_model_descriptor_width;
+    int candidate_model_descriptor_width;
+
 };
 
 #endif

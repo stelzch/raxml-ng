@@ -1,7 +1,6 @@
 #include "ModelEvaluator.hpp"
 #include "ModelDefinitions.hpp"
 #include <cmath>
-#include <utility>
 
 thread_local unsigned int ModelEvaluator::_thread_id = 0;
 thread_local int ModelEvaluator::_barrier_mycycle = 0;
@@ -17,7 +16,7 @@ size_t max_reduction_cardinality(const RateHeterogeneityDescriptor &rhas)
 
 ModelEvaluator::ModelEvaluator(const ModelDescriptor &candidate_model, const PartitionStats &stats,
                                                    size_t partition_index, EvaluationPriority priority,
-                                                   const size_t proposed_thread_count)
+                                                   const size_t proposed_thread_count, size_t *state_count)
     : _proposed_thread_count{proposed_thread_count},
       _candidate_model{&candidate_model},
       _partition_index{partition_index},
@@ -26,7 +25,8 @@ ModelEvaluator::ModelEvaluator(const ModelDescriptor &candidate_model, const Par
       _barrier_counter(0),
       _barrier_proceed(0),
       _assigned_threads(0),
-      _reduce_buffer(_proposed_thread_count * max_reduction_cardinality(candidate_model.rate_heterogeneity), 0.)
+      _reduce_buffer(0),
+      _state_count(state_count)
 {
   assign(_result.model, stats);
 }
@@ -41,8 +41,12 @@ bool ModelEvaluator::join_team()
   _thread_id = _assigned_threads++;
   _barrier_mycycle = 0;
 
+  if (_thread_id == 0) {
+      allocate();
+  }
+
   if (_assigned_threads == _proposed_thread_count) {
-      status = EvaluationStatus::RUNNING;
+      set_status(EvaluationStatus::RUNNING);
   }
 
   return true;
@@ -50,7 +54,7 @@ bool ModelEvaluator::join_team()
 
 void ModelEvaluator::skip()
 {
-    status = EvaluationStatus::SKIPPED;
+    set_status(EvaluationStatus::SKIPPED);
 }
 
 void ModelEvaluator::wait() const
@@ -65,7 +69,7 @@ void ModelEvaluator::store_result(const ModelEvaluation &result)
       return;
 
   _result = result;
-  status = EvaluationStatus::FINISHED;
+  set_status(EvaluationStatus::FINISHED);
 }
 
 const volatile EvaluationStatus &ModelEvaluator::get_status() const
@@ -222,4 +226,20 @@ bool ModelEvaluator::copy_rhas_parameters(const ModelEvaluator *const other)
   }
 
   return true;
+}
+
+void ModelEvaluator::allocate()
+{
+    _reduce_buffer.resize(_proposed_thread_count * max_reduction_cardinality(_candidate_model->rate_heterogeneity), 0.);
+}
+
+void ModelEvaluator::set_status(EvaluationStatus new_status)
+{
+    if (_state_count)
+        _state_count[to_underlying(status)] -= 1;
+
+    status = new_status;
+
+    if (_state_count)
+        _state_count[to_underlying(status)] += 1;
 }

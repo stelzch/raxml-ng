@@ -27,6 +27,12 @@ enum class EvaluationStatus
   FINISHED
 };
 
+// https://stackoverflow.com/a/8357462
+template <typename E>
+constexpr typename std::underlying_type<E>::type to_underlying(E e) noexcept {
+    return static_cast<typename std::underlying_type<E>::type>(e);
+}
+
 /** Captures the run-time state of a possibly multi-threaded evaluation of a given ModelDescriptor on a partition.
  * All calls to non-const methods must be protected with an external mutex!
  */
@@ -34,7 +40,7 @@ class ModelEvaluator
 {
 public:
   ModelEvaluator(const ModelDescriptor &candidate_model, const PartitionStats &stats, size_t partition_index,
-                 EvaluationPriority priority, size_t proposed_thread_count);
+                 EvaluationPriority priority, size_t proposed_thread_count, size_t *state_count = nullptr);
 
   /** Try to add calling thread with specified thread_id to the team */
   bool join_team();
@@ -43,7 +49,7 @@ public:
   void skip();
 
   /** Store results from a finished computation. */
-  void store_result(const ModelEvaluation &evaluation);
+  void store_result(const ModelEvaluation &result);
 
   /** Block until the status changes from WAITING to either RUNNING or
    * SKIPPED. May only be called by threads that are part of the team */
@@ -96,8 +102,14 @@ private:
 
   volatile unsigned int _assigned_threads;
   std::vector<double> _reduce_buffer;
+  size_t *_state_count;
 
   static thread_local unsigned int _thread_id;
+
+
+  /* Only allocate reduce buffer and other variables when first thread joins */
+  void allocate();
+  void set_status(EvaluationStatus status);
 };
 
 #endif
