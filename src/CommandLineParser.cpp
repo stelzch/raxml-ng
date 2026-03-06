@@ -470,6 +470,11 @@ void CommandLineParser::parse_consense_cutoff(Options &opts, const char* optarg)
   }
 }
 
+char to_lower_case(char c)
+{
+    return std::tolower(c, std::locale());
+}
+
 void CommandLineParser::parse_modeltest_options(Options &opts, const string& arg)
 {
   auto model_opts = split_string(arg, '/');
@@ -477,11 +482,12 @@ void CommandLineParser::parse_modeltest_options(Options &opts, const string& arg
   for (auto& mopt: model_opts)
   {
     auto toks = split_string(mopt, '=');
-    auto mopt_name = toks[0];
+    const auto& mopt_name = toks[0];
     auto mopt_val = toks.size() > 1 ? toks[1] : "";
 
     if (mopt_name == "criterion")
     {
+      std::transform(mopt_val.begin(), mopt_val.end(), mopt_val.begin(), to_lower_case);
       if (mopt_val == "aic")
           opts.model_selection_criterion = InformationCriterion::aic;
       else if (mopt_val == "aicc")
@@ -497,8 +503,8 @@ void CommandLineParser::parse_modeltest_options(Options &opts, const string& arg
       std::smatch match;
       if (!std::regex_match(mopt_val, match, pattern)) {
         throw InvalidOptionValueException(
-          "Invalid FreeRate category specification: " + mopt_val +
-          ", argument must be specified as single integer or range of two positive integers, e.g. \"5\" or \"2-10\".");
+            "Invalid FreeRate category specification: " + mopt_val +
+            R"(, argument must be specified as single integer or range of two positive integers, e.g. "5" or "2-10".)");
       }
 
       auto cmin = std::stoi(match[1]);
