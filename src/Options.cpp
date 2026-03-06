@@ -49,7 +49,8 @@ num_sh_reps(RAXML_SH_ALRT_REPS), sh_epsilon(RAXML_SH_ALRT_EPSILON),
 free_rate_min_categories(2), free_rate_max_categories(10), free_rate_opt_method(FreerateOptMethod::AUTO),
 model_selection_criterion(InformationCriterion::bic), modeltest_heuristics({HeuristicType::FREERATE, HeuristicType::RHAS}),
 modeltest_significant_ic_delta(10.0), modeltest_rhas(default_rate_heterogeneity_selection),
-modeltest_rhas_heuristic_mode(RHASHeuristicMode::AllSignficantCategoryCounts)
+modeltest_rhas_heuristic_mode(RHASHeuristicMode::AllSignficantCategoryCounts),
+modeltest_coarse_grained_parallelization(false)
 {
 #ifdef _RAXML_JSON
   modeltest_json_output = true;

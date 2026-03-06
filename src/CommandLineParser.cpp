@@ -570,6 +570,10 @@ void CommandLineParser::parse_modeltest_options(Options &opts, const string& arg
     {
       opts.modeltest_subst_models = split_string(mopt_val, ',');
     }
+    else if (mopt_name == "coarse-grained-parallelization")
+    {
+      opts.modeltest_coarse_grained_parallelization = true;
+    }
     else
       throw InvalidOptionValueException("Unknown modeltest option: '" + mopt_name + "'");
   }

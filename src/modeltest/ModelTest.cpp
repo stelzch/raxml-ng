@@ -80,7 +80,8 @@ vector<ModelDescriptor> ModelTest::generate_candidate_model_names(const DataType
 size_t modeltest_estimate_cores(const Options &options, const PartitionInfo &pinfo,
                                 const ModelDescriptor &candidate_model, EvaluationPriority priority)
 {
-  RAXML_UNUSED(options);
+  if (options.modeltest_coarse_grained_parallelization)
+      return 1;
 
   const auto taxon_clv_size =
       pinfo.length() * candidate_model.rate_heterogeneity.category_count * pinfo.model().num_states();
