@@ -276,7 +276,7 @@ const vector<Model>& ModelTest::optimize_model()
     {
       sort_by_score(_results.at(p));
       const auto &best_model = _results[p].at(0);
-      logger().logstream(LogLevel::result, LogScope::thread)
+      LOG_RESULT
           << "Partition #" << p << ": " << best_model->model.to_string()
           << " (LogLH = " << FMT_LH(best_model->loglh)
           << "  BIC = " << FMT_LH(best_model->ic_score) << ")" << endl;

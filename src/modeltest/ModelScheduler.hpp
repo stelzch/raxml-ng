@@ -28,7 +28,6 @@ class ModelScheduler final {
                        ResourceEstimatorFunction resource_estimator);
 
         unsigned int recommended_thread_count() const;
-        void finalize();
         ~ModelScheduler() = default; 
 
         void update_result(ModelEvaluator &evaluator, const ModelEvaluation &result, bool announce = true, bool write_checkpoint = true);

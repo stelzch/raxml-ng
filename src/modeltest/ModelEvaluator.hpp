@@ -95,7 +95,7 @@ private:
   ModelEvaluation _result;
 
   /* Variables required for thread synchronization */
-  volatile EvaluationStatus status;
+  EvaluationStatus status;
   volatile unsigned int _barrier_counter;
   volatile int _barrier_proceed;
   static thread_local int _barrier_mycycle;

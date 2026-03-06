@@ -54,6 +54,9 @@ bool ModelEvaluator::join_team()
 
 void ModelEvaluator::skip()
 {
+    if (status != EvaluationStatus::WAITING)
+        return;
+
     set_status(EvaluationStatus::SKIPPED);
 }
 

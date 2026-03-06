@@ -256,21 +256,6 @@ void ModelScheduler::update_result(ModelEvaluator &evaluator, const ModelEvaluat
 {
   std::lock_guard<std::mutex> lock(mutex_evaluation);
   _update_result(evaluator, result, announce, write_checkpoint);
-
-  // Only show progress for new results
-  if (write_checkpoint)
-  {
-    const auto n_finished = evaluator_status_counts[to_underlying(EvaluationStatus::FINISHED)];
-    const auto n_total = evaluators.size() - evaluator_status_counts[to_underlying(EvaluationStatus::SKIPPED)];
-    const int width = static_cast<int>(std::to_string(evaluators.size() + 1).size());
-
-    logger().logstream(LogLevel::progress, LogScope::thread) << RAXML_LOG_TIMESTAMP << std::setfill(' ')
-        << "[" << setw(3) << evaluator.proposed_thread_count() << "T] " << "Evaluated model "
-        << "(" << std::setw(width) << n_finished << "/" << std::setw(width) << n_total << ") "
-        << std::setw(candidate_model_descriptor_width) << std::left << evaluator.candidate_model().descriptor() << " " << right
-        << "LogLH = " << setw(15) << FMT_LH(evaluator.get_result().loglh) << "  "
-        << options.ic_name() << " = " << FMT_LH(evaluator.get_result().ic_score) << endl;
-  }
 }
 
 void ModelScheduler::_update_result(ModelEvaluator &evaluator, const ModelEvaluation &result, bool announce, bool write_checkpoint)
@@ -290,6 +275,17 @@ void ModelScheduler::_update_result(ModelEvaluator &evaluator, const ModelEvalua
   }
 
   if (write_checkpoint && ParallelContext::master_rank()) {
+    const auto n_finished = evaluator_status_counts[to_underlying(EvaluationStatus::FINISHED)];
+    const auto n_total = evaluators.size() - evaluator_status_counts[to_underlying(EvaluationStatus::SKIPPED)];
+    const int width = static_cast<int>(std::to_string(evaluators.size() + 1).size());
+
+    logger().logstream(LogLevel::progress, LogScope::thread) << RAXML_LOG_TIMESTAMP << std::setfill(' ')
+        << "[" << setw(3) << evaluator.proposed_thread_count() << "T] " << "Evaluated model "
+        << "(" << std::setw(width) << n_finished << "/" << std::setw(width) << n_total << ") "
+        << std::setw(candidate_model_descriptor_width) << std::left << evaluator.candidate_model().descriptor() << " " << right
+        << "LogLH = " << setw(15) << FMT_LH(evaluator.get_result().loglh) << "  "
+        << options.ic_name() << " = " << FMT_LH(evaluator.get_result().ic_score) << endl;
+
     checkpoint_manager.update_and_write(PartitionCandidateModel { evaluator.partition_index(), evaluator.candidate_model() }, evaluator.get_result());
   }
 }
@@ -473,13 +469,9 @@ void ModelScheduler::_eager_heuristic_evaluation()
 
     LOG_INFO << "Eager evaluation of heuristics" << endl;
 
-    for (auto i = evaluation_index; i < evaluators.size(); ++i)
+    for (auto & evaluator : evaluators)
     {
-        auto &evaluator = evaluators[i];
-        if (evaluators[i].get_status() != EvaluationStatus::WAITING)
-            continue;
-
-        if (heuristics.can_skip(evaluator.partition_index(), evaluator.candidate_model())) {
+         if (heuristics.can_skip(evaluator.partition_index(), evaluator.candidate_model())) {
             evaluator.skip();
         }
     }
