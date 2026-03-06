@@ -2,6 +2,7 @@
 #include "FreerateHeuristic.hpp"
 #include "ModelDefinitions.hpp"
 #include "RHASHeuristic.hpp"
+#include <algorithm>
 
 
 
@@ -93,4 +94,13 @@ bool Heuristics::evaluation_essential(unsigned int partition, const ModelDescrip
 
     return essential;
 
+}
+
+bool Heuristics::has_rhas_converged() const
+{
+    auto has_converged = [](const RHASHeuristic &h) {
+        return h.has_converged();
+    };
+
+    return std::all_of(rhas_heuristics.cbegin(), rhas_heuristics.cend(), has_converged);
 }

@@ -18,10 +18,10 @@ class Heuristics
 
         /** Return whether the evaluation of a given candidate was essential or could have been skipped in hindsight. */
         bool evaluation_essential(unsigned int partition, const ModelDescriptor &candidate_model) const;
+        bool enabled(const HeuristicType & heuristic) const;
+        bool has_rhas_converged() const;
 
     private:
-        bool enabled(const HeuristicType & heuristic) const;
-
         const HeuristicSelection selection;
         const SubstitutionModelDescriptor reference_matrix;
         bool invariant_freerate_enabled;

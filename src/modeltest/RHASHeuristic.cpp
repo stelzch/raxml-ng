@@ -151,3 +151,8 @@ void RHASHeuristic::set_partition_index(size_t partition_index)
 {
     this->partition_index = partition_index;
 }
+
+bool RHASHeuristic::has_converged() const
+{
+    return missing_model_counts.empty();
+}

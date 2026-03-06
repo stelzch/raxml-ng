@@ -50,6 +50,8 @@ public:
 
   void set_partition_index(size_t partition_index);
 
+  bool has_converged() const;
+
 private:
   RHASHeuristicMode mode;
 

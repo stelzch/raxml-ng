@@ -106,6 +106,28 @@ unsigned int max_descriptor_width(Iterator begin, Iterator end)
   return w;
 }
 
+int sort_by_descending_priority(const ModelEvaluator &a, const ModelEvaluator &b) {
+    // Sort by priority, high priority should come first
+    return a.priority() > b.priority();
+}
+
+int sort_by_descending_thread_count(const ModelEvaluator &a, const ModelEvaluator &b) {
+    return a.proposed_thread_count() > b.proposed_thread_count();
+}
+
+int sort_by_ascending_rate_cats(const ModelEvaluator &a, const ModelEvaluator &b) {
+    return a.candidate_model().rate_heterogeneity.category_count < b.candidate_model().rate_heterogeneity.category_count;
+}
+
+bool priority_is_leq_normal(const ModelEvaluator &a) {
+    return a.priority() <= EvaluationPriority::NORMAL;
+}
+
+bool priority_is_leq_high(const ModelEvaluator &a) {
+    return a.priority() <= EvaluationPriority::HIGH;
+}
+
+
 ModelScheduler::ModelScheduler(
             std::vector<ModelDescriptor> _candidate_models,
             const PartitionedMSA &msa,
@@ -258,6 +280,10 @@ void ModelScheduler::_update_result(ModelEvaluator &evaluator, const ModelEvalua
 
   evaluator.store_result(result);
   heuristics.update(evaluator.partition_index(), evaluator.candidate_model(), evaluator.get_result().ic_score);
+
+  if (!_eager_heuristic_evaluation_done && priority_is_leq_normal(evaluator) && heuristics.has_rhas_converged()) {
+    _eager_heuristic_evaluation();
+  }
 
   if (announce) {
     distributed_scheduling.announce_result(index, evaluator.get_result());
@@ -439,4 +465,24 @@ void ModelScheduler::print_xml(ostream &os) const
   }
 
   os << "</modeltestresults>" << endl;
+}
+
+void ModelScheduler::_eager_heuristic_evaluation()
+{
+    if (_eager_heuristic_evaluation_done) return;
+
+    LOG_INFO << "Eager evaluation of heuristics" << endl;
+
+    for (auto i = evaluation_index; i < evaluators.size(); ++i)
+    {
+        auto &evaluator = evaluators[i];
+        if (evaluators[i].get_status() != EvaluationStatus::WAITING)
+            continue;
+
+        if (heuristics.can_skip(evaluator.partition_index(), evaluator.candidate_model())) {
+            evaluator.skip();
+        }
+    }
+
+    _eager_heuristic_evaluation_done = true;
 }
